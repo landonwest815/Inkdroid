@@ -1,7 +1,5 @@
-package com.example.customviewdemo
+package com.example.drawingappall
 
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.testing.TestLifecycleOwner
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

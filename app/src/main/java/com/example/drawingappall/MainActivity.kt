@@ -1,4 +1,4 @@
-package com.example.customviewdemo
+package com.example.drawingappall
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -6,9 +6,8 @@ import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
-import com.example.customviewdemo.databinding.ActivityMainBinding
+import com.example.drawingappall.databinding.ActivityMainBinding
 import kotlin.random.Random
-import kotlin.reflect.typeOf
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

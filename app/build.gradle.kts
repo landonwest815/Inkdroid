@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.customviewdemo"
+    namespace = "com.example.drawingappall"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.customviewdemo"
+        applicationId = "com.example.drawingappall"
         minSdk = 35
         versionCode = 1
         versionName = "1.0"

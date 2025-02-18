@@ -1,17 +1,9 @@
-package com.example.customviewdemo
+package com.example.drawingappall
 
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.testing.TestLifecycleOwner
-import androidx.test.core.app.ActivityScenario.launch
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import junit.framework.TestCase
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 
 import org.junit.Test
 import org.junit.runner.RunWith

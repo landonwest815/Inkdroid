@@ -1,12 +1,9 @@
-package com.example.customviewdemo
+package com.example.drawingappall
 
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.testing.TestLifecycleOwner
-import junit.framework.TestCase.assertNotSame
-import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.launch
 import org.junit.Assert
-import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 class ViewModelTest {

@@ -1,4 +1,4 @@
-package com.example.customviewdemo
+package com.example.drawingappall
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -10,9 +10,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import com.example.customviewdemo.databinding.FragmentDrawBinding
+import com.example.drawingappall.databinding.FragmentDrawBinding
 import kotlinx.coroutines.launch
 
 

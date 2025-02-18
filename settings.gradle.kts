@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "customViewDemo"
+rootProject.name = "DrawingAppAll"
 include(":app")
