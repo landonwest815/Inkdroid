@@ -33,6 +33,4 @@ class ClickFragment : Fragment() {
 
         return binding.root
     }
-
-
 }
