@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
@@ -14,6 +15,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.customviewdemo.databinding.FragmentDrawBinding
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 
 class DrawFragment : Fragment() {
@@ -21,7 +23,7 @@ class DrawFragment : Fragment() {
     //OK for this demo, but views are created/destroyed during lifecycle events so
     //this should really be stored in a viewmodel!
     private val bitmap =
-        Bitmap.createBitmap(800, 800, Bitmap.Config.ARGB_8888)
+        Bitmap.createBitmap(400, 400, Bitmap.Config.ARGB_8888)
     private val bitmapCanvas = Canvas(bitmap)
     private val paint = Paint()
 
@@ -38,10 +40,21 @@ class DrawFragment : Fragment() {
         // here it doesn't matter
         val viewModel : SimpleViewModel by activityViewModels()
         val sizeViewModel: SizeViewModel by activityViewModels()
+        val bitmapModel: BitmapModel by activityViewModels()
 
+        lifecycleScope.launch {
+            bitmapModel.bitmap.collect { //new bitmap is passed as `it`
+                binding.customView.setBitmap(it)
+
+                //trigger the view's onDraw to run eventually
+                binding.customView.invalidate()
+            }
+        }
+
+        /*
         // when the view draws itself, copy our bitmap onto
         // the screen
-        binding.customView.setBitmap(bitmap)
+
         lifecycleScope.launch {
             viewModel.color.collect { //new color is passed as `it`
                 //update the bitmap
@@ -60,19 +73,42 @@ class DrawFragment : Fragment() {
                 binding.customView.invalidate()
             }
         }
-        return binding.root
+        */
 
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val binding = FragmentDrawBinding.bind(view)
+
+        //in onViewCreated so that view isn't null
+        view.setOnTouchListener { _, event ->
+            // draw on drag
+            if (event.action == MotionEvent.ACTION_MOVE) {
+                drawPen(event.x, event.y)
+            }
+            true
+        }
     }
 
     //draws to our bitmap.  If the bitmap is stored in a VM, this method should probably get
     //moved to the fragment or possibly the VM
     fun drawCircle(color: Color, scale: Float){
-        paint.color = Color.WHITE
-        bitmapCanvas.drawRect(0f,0f, bitmap.width.toFloat(), bitmap.height.toFloat(), paint)
-        paint.color = color.toArgb()
-        bitmapCanvas.drawCircle(scale*bitmap.width, scale*bitmap.height,
-            0.5f*scale*bitmap.width, paint)
-
+        val bitmapModel: BitmapModel by activityViewModels()
+        bitmapModel.drawCircle(color, scale, paint)
     }
 
+    private fun drawPen(x : Float, y : Float){
+        val viewModel : SimpleViewModel by activityViewModels()
+
+        lifecycleScope.launch {
+            viewModel.color.collect { //new color is passed as `it`
+                paint.color = it.toArgb()
+
+                val bitmapModel: BitmapModel by activityViewModels()
+                bitmapModel.drawPen(x, y, paint)
+            }
+        }
+    }
 }

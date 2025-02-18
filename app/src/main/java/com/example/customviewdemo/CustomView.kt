@@ -18,7 +18,6 @@ class CustomView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     //use the lazy delegated property to initialize it on first access, once the size is set
     private val rect: Rect by lazy {Rect(0,0,width, height)}
 
-
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         //?. calls the let method if bitmap is not null
@@ -33,7 +32,4 @@ class CustomView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     fun setBitmap(bitmap: Bitmap){
         this.bitmap = bitmap
     }
-
-
-
 }

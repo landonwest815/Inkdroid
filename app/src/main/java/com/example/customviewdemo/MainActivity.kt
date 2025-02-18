@@ -2,6 +2,7 @@ package com.example.customviewdemo
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.MotionEvent
 import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
@@ -28,6 +29,8 @@ class MainActivity : AppCompatActivity() {
                 var here :Int = 1
             }
         }
+
+
         val sizeVM : SizeViewModel by viewModels()
         binding.resizeButton.setOnClickListener{
             sizeVM.update(Random.Default.nextFloat()) //new random size between 0 and 1
