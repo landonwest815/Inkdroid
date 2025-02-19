@@ -8,29 +8,30 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
 
-//constructor takes 2 params, and forwards them to the View super constructor
+/**
+ * A custom `View` that displays a given `Bitmap`.
+ * Supports dynamic updates by calling `setBitmap()`.
+ */
 class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
 
     private val paint = Paint()
     private var bitmap: Bitmap? = null
-    //width/height are 0 when the constructor is called
-    //use the lazy delegated property to initialize it on first access, once the size is set
-    private val rect: Rect by lazy {Rect(0,0,width, height)}
+
+    // Lazily initialized Rect, ensuring it's created only when accessed (after size is set)
+    private val rect: Rect by lazy { Rect(0, 0, width, height) }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        //?. calls the let method if bitmap is not null
-        // let just runs the callback with it = bitmap
-        //like if(bitmap != null){canvas.drawBitmap(bitmap!!, ...)}
-        //canvas.drawColor(android.graphics.Color.WHITE)
 
+        // Draw the bitmap to fit the entire view
         bitmap?.let {
             canvas.drawBitmap(it, null, rect, paint)
         }
     }
 
-    fun setBitmap(bitmap: Bitmap){
+    // Sets a new `Bitmap` and requests a redraw.
+    fun setBitmap(bitmap: Bitmap) {
         this.bitmap = bitmap
-        invalidate()
+        invalidate() // Triggers `onDraw()` to refresh the view
     }
 }
