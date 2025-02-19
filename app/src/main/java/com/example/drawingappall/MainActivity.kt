@@ -15,8 +15,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -30,11 +34,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -70,7 +76,7 @@ fun App() {
                     ClickScreen { navController.navigate("draw") }
                 }
                 composable("draw") {
-                    DrawScreen()
+                    DrawScreen(navController = navController) // Pass navController
                 }
             }
         }
@@ -91,25 +97,42 @@ fun ClickScreen(onNavigateToDraw: () -> Unit) {
             Text(
                 text = "Welcome to our\ndrawing app!",
                 style = MaterialTheme.typography.headlineMedium,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 color = Color.Black,
+                fontSize = 35.sp,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
             )
+
+            Text(
+                text = "Landon Evans\nAndy Chadwick\nLandon West",
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center,
+                color = Color.Gray,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(50.dp))
+
             Button(onClick = onNavigateToDraw) {
-                Text("Go to Draw Screen")
+                Text("Let's Draw")
             }
         }
     }
 }
 
 @Composable
-fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
+fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavController) {
     val bitmap by viewModel.bitmap.collectAsState()
     val strokeColor by viewModel.color.collectAsState()
     val circleSize by viewModel.circleSize.collectAsState()
-
+    val color by viewModel.color.collectAsState() // ✅ Observe the color
 
     Column(
         modifier = Modifier
@@ -120,6 +143,31 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
     ) {
 
         Spacer(modifier = Modifier.weight(1f))
+
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 32.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "My Drawing",
+                color = Color.Gray,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            IconButton(
+                onClick = { navController.popBackStack() }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = Color.Gray
+                )
+            }
+        }
 
         // ✅ A Box ensures the Canvas takes available space while staying square
         Box(
@@ -187,8 +235,8 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
                 valueRange = 5f..100f,
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
-                    thumbColor = Color.Black,
-                    activeTrackColor = Color.Black,
+                    thumbColor = color,
+                    activeTrackColor = color,
                     inactiveTrackColor = Color(0xFFBDBDBD)
                 )
             )
@@ -201,8 +249,6 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
                 .padding(horizontal = 32.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
-            val color by viewModel.color.collectAsState() // ✅ Observe the color
 
             Button(
                 onClick = { viewModel.pickColor() },
@@ -227,8 +273,22 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
     }
 }
 
+//@Preview(showBackground = true)
+//@Composable
+//fun AppPreview() {
+//    ClickScreen(
+//        onNavigateToDraw = {}
+//    )
+//}
+
 @Preview(showBackground = true)
 @Composable
 fun AppPreview() {
-    DrawScreen()
+    val navController = rememberNavController() // Mock NavController
+    val viewModel: DrawingViewModel = viewModel() // Default ViewModel instance
+
+    DrawScreen(
+        viewModel = viewModel,
+        navController = navController
+    )
 }
