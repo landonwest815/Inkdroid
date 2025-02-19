@@ -9,7 +9,7 @@ import android.util.AttributeSet
 import android.view.View
 
 //constructor takes 2 params, and forwards them to the View super constructor
-class CustomView(context: Context, attrs: AttributeSet) : View(context, attrs) {
+class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
 
     private val paint = Paint()
     private var bitmap: Bitmap? = null
@@ -22,13 +22,15 @@ class CustomView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         //?. calls the let method if bitmap is not null
         // let just runs the callback with it = bitmap
         //like if(bitmap != null){canvas.drawBitmap(bitmap!!, ...)}
+        canvas.drawColor(android.graphics.Color.WHITE)
+
         bitmap?.let {
             canvas.drawBitmap(it, null, rect, paint)
-            //canvas.drawBitmap(it, null, Rect(0,0, 500, 500), paint)
         }
     }
 
     fun setBitmap(bitmap: Bitmap){
         this.bitmap = bitmap
+        invalidate()
     }
 }
