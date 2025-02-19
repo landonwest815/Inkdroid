@@ -13,6 +13,19 @@ constraintlayout = "2.2.0"
 mockito = "4.8.0"
 lifecycle = "2.8.7"
 
+# Jetpack Compose Versions
+composeBom = "2024.01.00"
+composeUi = "1.6.2"
+composeMaterial3 = "1.2.1"
+composeMaterial = "1.6.2"
+composeRuntime = "1.6.2"
+composeNavigation = "2.7.7"
+composeActivity = "1.8.2"
+composeCompiler = "1.5.10"
+composeViewModel = "2.6.2"
+composeLivedata = "1.6.2"
+uiTooling = "1.7.8"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
@@ -30,7 +43,22 @@ androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifec
 androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycle" }
 mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockito" }
 
+# Jetpack Compose Dependencies
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "composeUi" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "composeUi" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "composeUi" }
+androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "composeRuntime" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "composeMaterial3" }
+androidx-compose-material = { group = "androidx.compose.material", name = "material", version.ref = "composeMaterial" }
+androidx-compose-navigation = { group = "androidx.navigation", name = "navigation-compose", version.ref = "composeNavigation" }
+androidx-compose-activity = { group = "androidx.activity", name = "activity-compose", version.ref = "composeActivity" }
+androidx-compose-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "composeViewModel" }
+androidx-compose-lifecycle-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "composeLivedata" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
