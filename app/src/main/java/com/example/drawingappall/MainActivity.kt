@@ -18,6 +18,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -46,17 +48,26 @@ class MainActivity : ComponentActivity() {
 fun App() {
     val navController = rememberNavController()
 
-    Scaffold { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = "click",
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable("click") {
-                ClickScreen { navController.navigate("draw") }
-            }
-            composable("draw") {
-                DrawScreen()
+    Box( // Wrap everything in a Box to apply full-screen background
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFEEEEEE)) // ✅ Background covers entire screen
+    ) {
+        Scaffold(
+            contentColor = Color.Transparent, // Prevents Scaffold from overriding background
+            containerColor = Color.Transparent // Ensures full transparency in Scaffold
+        ) { paddingValues ->
+            NavHost(
+                navController = navController,
+                startDestination = "click",
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                composable("click") {
+                    ClickScreen { navController.navigate("draw") }
+                }
+                composable("draw") {
+                    DrawScreen()
+                }
             }
         }
     }
@@ -77,6 +88,7 @@ fun ClickScreen(onNavigateToDraw: () -> Unit) {
                 text = "Welcome to our\ndrawing app!",
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = Color.Black,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
@@ -94,25 +106,23 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
     val strokeColor by viewModel.color.collectAsState()
     val circleSize by viewModel.circleSize.collectAsState()
 
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black) // ✅ Non-canvas background is black
+            .background(Color(0xFFEEEEEE)) // ✅ Non-canvas background is black
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-
-
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.weight(1f))
 
         // ✅ A Box ensures the Canvas takes available space while staying square
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f) // ✅ Allows the rest of the layout to be properly sized
-                .background(Color.Red) // ✅ Canvas area remains red
+                .fillMaxWidth(0.9f) // Adjust width to prevent full screen
+                .aspectRatio(1f), // Ensures a square shape
+            contentAlignment = Alignment.Center
         ) {
             AndroidView(
                 factory = { context ->
@@ -126,6 +136,7 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxSize() // ✅ Canvas takes full space in the Box
                     .aspectRatio(1f) // ✅ Ensures the canvas is square
+                    .background(Color.White)
                     .pointerInput(Unit) {
                         detectDragGestures { change, _ ->
                             viewModel.drawOnCanvas(
@@ -146,6 +157,12 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
             onValueChange = { viewModel.updateSize(it) },
             valueRange = 5f..100f,
             modifier = Modifier.fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            colors = SliderDefaults.colors(
+                thumbColor = Color.Black,  // ✅ Black thumb (handle)
+                activeTrackColor = Color.Black,  // ✅ Black line when dragging
+                inactiveTrackColor = Color(0xFFBDBDBD) // ✅ Black line when not dragging
+            )
         )
 
         Text("Brush Size: ${circleSize.toInt()}", color = Color.Black) // ✅ White text for visibility
@@ -159,5 +176,22 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
         ) {
             Text("Change Color", color = Color.White) // ✅ Ensures readability
         }
+
+        // Reset Canvas Button
+        Button(
+            onClick = { viewModel.resetCanvas() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black) // ✅ Ensures contrast
+        ) {
+            Text("Reset Canvas", color = Color.White) // ✅ Ensures readability
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AppPreview() {
+    DrawScreen()
 }

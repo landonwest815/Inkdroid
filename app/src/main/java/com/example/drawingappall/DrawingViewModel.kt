@@ -18,7 +18,7 @@ class DrawingViewModel : ViewModel() {
     private val _color = MutableStateFlow(Color(0f, 0f, 0f)) // Default Yellow
     val color: StateFlow<Color> = _color
 
-    private val _circleSize = MutableStateFlow(20f)
+    private val _circleSize = MutableStateFlow(50f)
     val circleSize: StateFlow<Float> = _circleSize
 
     private val paint = Paint().apply {
@@ -67,5 +67,9 @@ class DrawingViewModel : ViewModel() {
         canvas.drawCircle(scaledX, scaledY, _circleSize.value, paint)
 
         _bitmap.value = newBitmap // ✅ Trigger recomposition
+    }
+
+    fun resetCanvas() {
+        _bitmap.value = createEmptyBitmap() // Reset the canvas by replacing the bitmap
     }
 }

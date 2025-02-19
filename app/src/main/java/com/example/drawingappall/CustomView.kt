@@ -22,7 +22,7 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
         //?. calls the let method if bitmap is not null
         // let just runs the callback with it = bitmap
         //like if(bitmap != null){canvas.drawBitmap(bitmap!!, ...)}
-        canvas.drawColor(android.graphics.Color.WHITE)
+        //canvas.drawColor(android.graphics.Color.WHITE)
 
         bitmap?.let {
             canvas.drawBitmap(it, null, rect, paint)

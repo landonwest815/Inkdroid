@@ -83,5 +83,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.livedata.ktx)
     //Fragment stuff
     implementation(libs.androidx.fragment.ktx)
+    debugImplementation(libs.androidx.ui.tooling)
     //testImplementation(libs.mockito.kotlin)
 }
