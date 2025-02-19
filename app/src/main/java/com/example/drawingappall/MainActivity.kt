@@ -7,12 +7,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -27,8 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -152,37 +156,70 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Slider(
-            value = circleSize,
-            onValueChange = { viewModel.updateSize(it) },
-            valueRange = 5f..100f,
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier
                 .padding(horizontal = 32.dp),
-            colors = SliderDefaults.colors(
-                thumbColor = Color.Black,  // ✅ Black thumb (handle)
-                activeTrackColor = Color.Black,  // ✅ Black line when dragging
-                inactiveTrackColor = Color(0xFFBDBDBD) // ✅ Black line when not dragging
-            )
-        )
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Size",
+                    color = Color.Gray,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
 
-        Text("Brush Size: ${circleSize.toInt()}", color = Color.Black) // ✅ White text for visibility
+                Spacer(modifier = Modifier.width(8.dp)) // Adjust spacing as needed
+
+                Text(
+                    "${circleSize.toInt()}",
+                    color = Color.Black,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp)) // Adjust spacing as needed
+
+            Slider(
+                value = circleSize,
+                onValueChange = { viewModel.updateSize(it) },
+                valueRange = 5f..100f,
+                modifier = Modifier.fillMaxWidth(),
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.Black,
+                    activeTrackColor = Color.Black,
+                    inactiveTrackColor = Color(0xFFBDBDBD)
+                )
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ✅ Button is at the TOP, so it is NOT covered by the canvas
-        Button(
-            onClick = { viewModel.pickColor() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black) // ✅ Ensures contrast
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 32.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Change Color", color = Color.White) // ✅ Ensures readability
-        }
 
-        // Reset Canvas Button
-        Button(
-            onClick = { viewModel.resetCanvas() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black) // ✅ Ensures contrast
-        ) {
-            Text("Reset Canvas", color = Color.White) // ✅ Ensures readability
+            val color by viewModel.color.collectAsState() // ✅ Observe the color
+
+            Button(
+                onClick = { viewModel.pickColor() },
+                colors = ButtonDefaults.buttonColors(containerColor = color) // ✅ Uses observed state
+            ) {
+                Text("Change Color", color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.width(16.dp)) // Adjust spacing as needed
+
+            // Reset Canvas Button
+            Button(
+                onClick = { viewModel.resetCanvas() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red) // ✅ Ensures contrast
+            ) {
+                Text("Reset Canvas", color = Color.White) // ✅ Ensures readability
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
