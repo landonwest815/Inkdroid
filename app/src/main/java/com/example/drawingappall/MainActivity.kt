@@ -3,6 +3,7 @@ package com.example.drawingappall
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -33,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -94,6 +97,13 @@ fun ClickScreen(onNavigateToDraw: () -> Unit) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            Image(
+                painter = painterResource(id = R.drawable.painticon),
+                contentDescription = "Paint Icon",
+                modifier = Modifier.size(100.dp)
+            )
+
             Text(
                 text = "Welcome to our\ndrawing app!",
                 style = MaterialTheme.typography.headlineMedium,
@@ -107,7 +117,7 @@ fun ClickScreen(onNavigateToDraw: () -> Unit) {
             )
 
             Text(
-                text = "Landon Evans\nAndy Chadwick\nLandon West",
+                text = "Andy Chadwick\nLandon Evans\nLandon West",
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
                 color = Color.Gray,
@@ -273,22 +283,22 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun AppPreview() {
-//    ClickScreen(
-//        onNavigateToDraw = {}
-//    )
-//}
-
 @Preview(showBackground = true)
 @Composable
 fun AppPreview() {
-    val navController = rememberNavController() // Mock NavController
-    val viewModel: DrawingViewModel = viewModel() // Default ViewModel instance
-
-    DrawScreen(
-        viewModel = viewModel,
-        navController = navController
+    ClickScreen(
+        onNavigateToDraw = {}
     )
 }
+
+//@Preview(showBackground = true)
+//@Composable
+//fun AppPreview() {
+//    val navController = rememberNavController() // Mock NavController
+//    val viewModel: DrawingViewModel = viewModel() // Default ViewModel instance
+//
+//    DrawScreen(
+//        viewModel = viewModel,
+//        navController = navController
+//    )
+//}
