@@ -1,5 +1,6 @@
 package com.example.drawingappall
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,7 +44,7 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
 
     // get our data from the viewModel
     val bitmap by viewModel.bitmap.collectAsState()
-    val circleSize by viewModel.circleSize.collectAsState()
+    val shapeSize by viewModel.shapeSize.collectAsState()
     val color by viewModel.color.collectAsState()
 
     Column(
@@ -113,7 +115,7 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("${circleSize.toInt()}",
+            Text("${shapeSize.toInt()}",
                 color = Color.Black, fontSize = 18.sp,
                 fontWeight = FontWeight.Bold)
 
@@ -121,7 +123,7 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
 
             // the actual slider with dynamic coloring
             Slider(
-                value = circleSize,
+                value = shapeSize,
                 onValueChange = { viewModel.updateSize(it) },
                 valueRange = 5f..100f,
                 modifier = Modifier.fillMaxWidth(),
@@ -158,8 +160,74 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
             }
         }
 
+        Spacer(modifier = Modifier.height(6.dp))
+
+        DrawShapeUI(viewModel)
+
         // pushes content upwards to center the UI on the screen
         Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun DrawShapeUI(viewModel: DrawingViewModel = viewModel()) {
+    // header text
+    Row(
+        modifier = Modifier.padding(horizontal = 32.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            "Shapes",
+            color = Color.Gray,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+
+    Spacer(modifier = Modifier.height(4.dp))
+
+    // buttons
+    Row(
+        modifier = Modifier.padding(horizontal = 32.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        val circleIcon = painterResource(id = R.drawable.circle_icon)
+        val triangleIcon = painterResource(id = R.drawable.triangle_icon)
+        val squareIcon = painterResource(id = R.drawable.square_icon)
+
+        // Square Button
+        Button(
+            onClick = { viewModel.changeShape(BrushShape.Square) },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+            modifier = Modifier.weight(1f)
+        ) {
+
+            Image(painter = squareIcon, contentDescription = null)
+        }
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        // Circle Button
+        Button(
+            onClick = { viewModel.changeShape(BrushShape.Circle) },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+            modifier = Modifier.weight(1f)
+        ) {
+
+            Image(painter = circleIcon, contentDescription = null)
+        }
+        Spacer(modifier = Modifier.width(4.dp))
+
+        // Triangle Button
+        Button(
+            onClick = { viewModel.changeShape(BrushShape.Triangle) },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+            modifier = Modifier.weight(1f)
+        ) {
+
+            Image(painter = triangleIcon, contentDescription = null)
+        }
     }
 }
 

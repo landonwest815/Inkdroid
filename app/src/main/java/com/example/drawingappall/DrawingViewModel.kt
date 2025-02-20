@@ -3,6 +3,7 @@ package com.example.drawingappall
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import androidx.compose.ui.graphics.Color
 import android.graphics.Color as AndroidColor
 import androidx.lifecycle.ViewModel
@@ -10,6 +11,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.random.Random
+
+/**
+ * Enum for different brush shapes
+ */
+enum class BrushShape
+{
+    Square,
+    Circle,
+    Triangle
+}
 
 /**
  * ViewModel for managing a drawable canvas in a Jetpack Compose app.
@@ -25,9 +36,13 @@ class DrawingViewModel : ViewModel() {
     private val _color = MutableStateFlow(Color.Black)
     val color: StateFlow<Color> = _color
 
-    // Circle size for drawing (default: 50px, constrained between 5px and 100px)
-    private val _circleSize = MutableStateFlow(50f)
-    val circleSize: StateFlow<Float> = _circleSize
+    // Shape size for drawing (default: 50px, constrained between 5px and 100px)
+    private val _shapeSize = MutableStateFlow(50f)
+    val shapeSize: StateFlow<Float> = _shapeSize
+
+    // Brush shape for drawing
+    private val _brushShape = MutableStateFlow(BrushShape.Circle)
+    val brushShape: StateFlow<BrushShape> = _brushShape
 
     // Paint object for rendering shapes
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -54,10 +69,15 @@ class DrawingViewModel : ViewModel() {
         }
     }
 
+    //Changes shape to an inputted shape
+    public fun changeShape(brushShape : BrushShape) {
+        _brushShape.value = brushShape
+        drawOnCanvas(-99999f, -99999f, 100, 100)
+    }
 
      //Updates the size of the drawing circle with a passed in float value
     fun updateSize(newSize: Float) {
-        _circleSize.update { newSize.coerceIn(5f, 100f) }
+        _shapeSize.update { newSize.coerceIn(5f, 100f) }
     }
 
 
@@ -79,12 +99,44 @@ class DrawingViewModel : ViewModel() {
         val scaledX = x * newBitmap.width / viewWidth
         val scaledY = y * newBitmap.height / viewHeight
 
-        // Set the paint color and draw the circle
+        // Set the paint color and draw the shape
         paint.color = _color.value.toAndroidColor()
-        canvas.drawCircle(scaledX, scaledY, _circleSize.value, paint)
+        drawShape(scaledX, scaledY, paint, canvas)
 
         // Assign the updated bitmap to trigger recomposition
         _bitmap.value = newBitmap
+    }
+
+    /**
+     * Draws a shape given the current brushShape.
+     */
+    private fun drawShape(scaledX : Float, scaledY : Float, paint: Paint, canvas : Canvas)
+    {
+        val shape = _brushShape.value
+        val size = _shapeSize.value
+
+        when (shape) {
+            BrushShape.Circle -> {
+                canvas.drawCircle(scaledX, scaledY, _shapeSize.value, paint)
+            }
+            BrushShape.Square -> {
+                canvas.drawRect(
+                    scaledX - size, scaledY - size,
+                    scaledX + size, scaledY + size,
+                    paint
+                )
+            }
+            BrushShape.Triangle -> {
+                // Create triangle path and draw it
+                val path = Path().apply {
+                    moveTo(scaledX, scaledY - size)
+                    lineTo(scaledX - size, scaledY + size)
+                    lineTo(scaledX + size, scaledY + size)
+                    close()
+                }
+                canvas.drawPath(path, paint)
+            }
+        }
     }
 
     // Resets the canvas by replacing the current bitmap with a new empty one.
