@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -131,7 +132,9 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
                 value = shapeSize,
                 onValueChange = { viewModel.updateSize(it) },
                 valueRange = 5f..100f,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("BrushSizeSlider"),
                 colors = SliderDefaults.colors(
                     thumbColor = color,  // the circle
                     activeTrackColor = color,  // left side of circle
@@ -208,7 +211,7 @@ fun DrawShapeUI(viewModel: DrawingViewModel = viewModel()) {
             modifier = Modifier.weight(1f)
         ) {
 
-            Image(painter = squareIcon, contentDescription = null)
+            Image(painter = squareIcon, contentDescription = "Square Button")
         }
 
         Spacer(modifier = Modifier.width(4.dp))
@@ -220,7 +223,7 @@ fun DrawShapeUI(viewModel: DrawingViewModel = viewModel()) {
             modifier = Modifier.weight(1f)
         ) {
 
-            Image(painter = circleIcon, contentDescription = null)
+            Image(painter = circleIcon, contentDescription = "Circle Button")
         }
         Spacer(modifier = Modifier.width(4.dp))
 
@@ -231,7 +234,7 @@ fun DrawShapeUI(viewModel: DrawingViewModel = viewModel()) {
             modifier = Modifier.weight(1f)
         ) {
 
-            Image(painter = triangleIcon, contentDescription = null)
+            Image(painter = triangleIcon, contentDescription = "Triangle Button")
         }
     }
 }

@@ -117,4 +117,16 @@ class InstrumentedShapeTests {
         testDrawShape(10f, 10f, -9999, -9999, BrushShape.Triangle)
         testDrawShape(10f, 10f, -9999, -9999, BrushShape.Circle)
     }
+
+    @Test
+    fun testChangeShape() {
+        val vm = DrawingViewModel()
+
+        vm.changeShape(BrushShape.Triangle)
+        assertEquals(BrushShape.Triangle, vm.brushShape.value)
+
+        vm.changeShape(BrushShape.Square)
+        assertEquals(BrushShape.Square, vm.brushShape.value)
+    }
+
 }
