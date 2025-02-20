@@ -12,7 +12,7 @@ import android.view.View
  * A custom `View` that displays a given `Bitmap`.
  * Supports dynamic updates by calling `setBitmap()`.
  */
-class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
+class BitmapView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
 
     private val paint = Paint()
     private var bitmap: Bitmap? = null

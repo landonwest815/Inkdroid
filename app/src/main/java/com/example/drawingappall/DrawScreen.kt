@@ -82,7 +82,7 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
             contentAlignment = Alignment.Center
         ) {
             AndroidView(
-                factory = { context -> CustomView(context, null).apply { setBitmap(bitmap) } },
+                factory = { context -> BitmapView(context, null).apply { setBitmap(bitmap) } },
                 update = { view -> view.setBitmap(bitmap) },
                 modifier = Modifier
                     .fillMaxSize()
