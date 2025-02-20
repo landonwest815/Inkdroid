@@ -19,7 +19,6 @@ import org.junit.Assert.*
 class InstrumentedShapeTests {
     private fun testChangeSize(size : Float){
         val vm = DrawingViewModel()
-        val before = vm.shapeSize.value
 
         var callbackFired = false
 

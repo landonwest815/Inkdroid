@@ -70,6 +70,11 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
 
             Spacer(modifier = Modifier.weight(1f))
 
+            // Save button
+            IconButton(onClick = {}) {
+                Icon(painter = painterResource(id = R.drawable.save_icon) ,contentDescription = "Save", tint = Color.Gray)
+            }
+
             // "x" button
             IconButton(onClick = { navController.popBackStack() }) {
                 Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
