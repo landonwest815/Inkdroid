@@ -3,6 +3,7 @@ package com.example.drawingappall
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -98,6 +99,18 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
                     .background(Color.White)
                     // this is what recognizes the touch events from the user
                     .pointerInput(Unit) {
+                        // detect tapping
+                        detectTapGestures { tapOffset ->
+                            viewModel.drawOnCanvas(
+                                x = tapOffset.x,
+                                y = tapOffset.y,
+                                viewWidth = size.width,
+                                viewHeight = size.height
+                            )
+                        }
+                    }
+                    .pointerInput(Unit) {
+                        // detect dragging
                         detectDragGestures { change, _ ->
                             viewModel.drawOnCanvas(
                                 x = change.position.x,
