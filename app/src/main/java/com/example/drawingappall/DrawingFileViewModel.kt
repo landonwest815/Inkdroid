@@ -17,7 +17,9 @@ class DrawingFileViewModel(private val repository: DrawingsRepository) : ViewMod
         initialValue = listOf() //start with an empty list
     )
 
-    fun createFile(name: String, filePath: String) {
+    fun createFile(name: String) {
+        //create blank bit map store in file
+        val filePath = ""
         var file = Drawing(name, filePath)
         repository.createFile(file)
     }

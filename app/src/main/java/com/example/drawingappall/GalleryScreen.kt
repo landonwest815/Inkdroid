@@ -59,7 +59,10 @@ fun GalleryScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             // New Drawing button
-            IconButton(onClick = {}) {
+            IconButton(onClick = {
+                //go to draw page
+                //call create send file name and path to draw page??
+            }) {
                 Icon(imageVector = Icons.Default.Add,
                     contentDescription = "Save",
                     tint = Color.Gray,

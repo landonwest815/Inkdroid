@@ -65,7 +65,7 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
         // there is another one at the bottom to push up
         Spacer(modifier = Modifier.weight(1f))
 
-        // title + quit button "x"
+        // title + quit ("x") and save button
         Row(
             modifier = Modifier.padding(horizontal = 32.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -76,11 +76,6 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
                 fontWeight = FontWeight.SemiBold)
 
             Spacer(modifier = Modifier.weight(1f))
-
-            // Gallery button
-            IconButton(onClick = {}) {
-                Icon(imageVector = Icons.Default.Home ,contentDescription = "Gallery", tint = Color.Gray)
-            }
 
             // Save button
             IconButton(onClick = {}) {

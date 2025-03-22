@@ -28,6 +28,7 @@ enum class BrushShape
  */
 class DrawingViewModel : ViewModel() {
 
+    //only do wen not loading file
     // Holds the bitmap that serves as the drawing surface
     private val _bitmap = MutableStateFlow(createEmptyBitmap())
     val bitmap: StateFlow<Bitmap> = _bitmap
@@ -56,6 +57,15 @@ class DrawingViewModel : ViewModel() {
         //Creates an empty bitmap with a transparent background.
         private fun createEmptyBitmap(): Bitmap =
             Bitmap.createBitmap(BITMAP_WIDTH, BITMAP_HEIGHT, Bitmap.Config.ARGB_8888)
+    }
+
+    fun saveDrawing(file: Drawing){
+        //save/update bitmap file
+    }
+
+    fun loadDrawing(file : Drawing){
+        //load file as bitmap
+        //always load file created by file view model
     }
 
     //Picks a random color and updates the current drawing color
