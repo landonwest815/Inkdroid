@@ -31,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import java.io.File
 
@@ -39,7 +41,7 @@ import java.io.File
 @Composable
 fun GalleryScreen(
     vm: DrawingFileViewModel = viewModel(factory = DrawingViewModelProvider.Factory),
-    onNavigateToDraw: () -> Unit) {
+    navController: NavController) {
 
     Column(modifier = Modifier
         .fillMaxSize()
@@ -61,7 +63,7 @@ fun GalleryScreen(
             // New Drawing button
             IconButton(onClick = {
                 //go to draw page
-                //call create send file name and path to draw page??
+                //call create send file name and path draw screen through parameter route call
             }) {
                 Icon(imageVector = Icons.Default.Add,
                     contentDescription = "Save",
@@ -74,7 +76,7 @@ fun GalleryScreen(
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             for (file in list.asReversed()) {
                 item {
-                    DrawingFileCard(file, onNavigateToDraw)
+                    DrawingFileCard(file, navController)
                 }
             }
         }
@@ -83,7 +85,7 @@ fun GalleryScreen(
 }
 
 @Composable
-fun DrawingFileCard(file: Drawing, onNavigateToDraw: () -> Unit) {
+fun DrawingFileCard(file: Drawing, navController: NavController) {
     Card(modifier = Modifier
         .fillMaxWidth(0.9f)
         .padding(8.dp)
@@ -103,7 +105,9 @@ fun DrawingFileCard(file: Drawing, onNavigateToDraw: () -> Unit) {
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                IconButton(onClick = onNavigateToDraw ) {
+                IconButton(onClick = {
+                    //use paramater nav to send drawing object
+                    navController.navigate("draw") }) {
                     Icon(imageVector = Icons.Default.Edit,
                         contentDescription = "Save",
                         tint = Color.Gray,
@@ -117,16 +121,23 @@ fun DrawingFileCard(file: Drawing, onNavigateToDraw: () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun GalleryScreenPreview() {
+
+    val navController = rememberNavController()
+
     GalleryScreen(
-        onNavigateToDraw = {}
+        navController = navController
     )
 }
 
 @Preview(showBackground = true)
 @Composable
 fun DrawingPreview() {
+
+    val navController = rememberNavController()
+
+
     DrawingFileCard(
         Drawing("MyDrawing", "default_preview.png"),
-        onNavigateToDraw = {}
+        navController
     )
 }

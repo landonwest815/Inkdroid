@@ -36,7 +36,7 @@ fun App() {
                     DrawScreen(navController = navController)
                 }
                 composable("gallery") {
-                    GalleryScreen{navController.navigate("draw")}
+                    GalleryScreen(navController = navController)
                 }
             }
         }
