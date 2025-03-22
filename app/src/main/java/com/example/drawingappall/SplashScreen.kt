@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SplashScreen(onNavigateToDraw: () -> Unit) {
+fun SplashScreen(onNavigateToGallery: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -62,7 +62,7 @@ fun SplashScreen(onNavigateToDraw: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // button to navigate to the draw screen
-            Button(onClick = onNavigateToDraw) {
+            Button(onClick = onNavigateToGallery) {
                 Text("Let's Draw")
             }
         }
@@ -73,6 +73,6 @@ fun SplashScreen(onNavigateToDraw: () -> Unit) {
 @Composable
 fun SplashScreenPreview() {
     SplashScreen(
-        onNavigateToDraw = {}
+        onNavigateToGallery = {}
     )
 }

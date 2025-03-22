@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -78,6 +79,8 @@ dependencies {
     implementation(libs.androidx.ui.android)
     implementation(libs.androidx.ui.test.junit4.android)
     implementation(libs.androidx.ui.test.junit4.android)
+    implementation(libs.androidx.room.common)
+    implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -90,4 +93,12 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     debugImplementation(libs.androidx.ui.tooling)
     //testImplementation(libs.mockito.kotlin)
+
+    //ROOM STUFF
+    implementation(libs.androidx.room.common)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+
+    //Image Preview
+    implementation("io.coil-kt:coil-compose:2.1.0")
 }

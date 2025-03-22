@@ -30,10 +30,13 @@ fun App() {
                 modifier = Modifier.padding(paddingValues)
             ) {
                 composable("splash") {
-                    SplashScreen { navController.navigate("draw") } // navigate to the draw screen
+                    SplashScreen { navController.navigate("gallery") } // navigate to the draw screen
                 }
                 composable("draw") {
                     DrawScreen(navController = navController)
+                }
+                composable("gallery") {
+                    GalleryScreen{navController.navigate("draw")}
                 }
             }
         }
