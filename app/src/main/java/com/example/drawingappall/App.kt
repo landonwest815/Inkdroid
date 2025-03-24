@@ -32,8 +32,10 @@ fun App() {
                 composable("splash") {
                     SplashScreen { navController.navigate("gallery") } // navigate to the draw screen
                 }
-                composable("draw") {
-                    DrawScreen(navController = navController)
+                composable("draw/{filepath}/{filename}") {backStackEntry ->
+                    val filePath: String = backStackEntry.arguments?.getString("filepath").toString()
+                    val fileName: String = backStackEntry.arguments?.getString("filename").toString()
+                    DrawScreen(navController = navController, filePath = filePath, fileName = fileName)
                 }
                 composable("gallery") {
                     GalleryScreen(navController = navController)

@@ -46,9 +46,12 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavController) {
+fun DrawScreen(viewModel: DrawingViewModel = viewModel(),
+               navController: NavController,
+               filePath: String, fileName: String) {
 
     // get our data from the viewModel
+    // give the viewmodel the file???
     val bitmap by viewModel.bitmap.collectAsState()
     val shapeSize by viewModel.shapeSize.collectAsState()
     val color by viewModel.color.collectAsState()
@@ -70,7 +73,7 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(), navController: NavCont
             modifier = Modifier.padding(horizontal = 32.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("My Drawing",
+            Text(fileName,
                 color = Color.Gray,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold)
@@ -265,6 +268,8 @@ fun DrawScreenPreview() {
 
     DrawScreen(
         viewModel = viewModel,
-        navController = navController
+        navController = navController,
+        "MyDrawing",
+        "default_preview.png"
     )
 }

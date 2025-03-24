@@ -62,8 +62,8 @@ fun GalleryScreen(
 
             // New Drawing button
             IconButton(onClick = {
-                //go to draw page
-                //call create send file name and path draw screen through parameter route call
+                val drawing: Drawing = vm.createFile("Drawing")
+                navController.navigate("draw/${drawing.filePath}/${drawing.fileName}")
             }) {
                 Icon(imageVector = Icons.Default.Add,
                     contentDescription = "Save",
@@ -106,10 +106,9 @@ fun DrawingFileCard(file: Drawing, navController: NavController) {
                 Spacer(modifier = Modifier.weight(1f))
 
                 IconButton(onClick = {
-                    //use paramater nav to send drawing object
-                    navController.navigate("draw") }) {
+                    navController.navigate("draw/${file.filePath}/${file.fileName}") }) {
                     Icon(imageVector = Icons.Default.Edit,
-                        contentDescription = "Save",
+                        contentDescription = "Edit",
                         tint = Color.Gray,
                     )
                 }
@@ -134,7 +133,6 @@ fun GalleryScreenPreview() {
 fun DrawingPreview() {
 
     val navController = rememberNavController()
-
 
     DrawingFileCard(
         Drawing("MyDrawing", "default_preview.png"),
