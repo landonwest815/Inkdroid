@@ -46,15 +46,17 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun DrawScreen(viewModel: DrawingViewModel = viewModel(),
+fun DrawScreen(viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory),
                navController: NavController,
                filePath: String, fileName: String) {
 
-    // get our data from the viewModel
-    // give the viewmodel the file???
+    //Attempt to load
+    viewModel.loadDrawing(filePath, fileName)
+
     val bitmap by viewModel.bitmap.collectAsState()
     val shapeSize by viewModel.shapeSize.collectAsState()
     val color by viewModel.color.collectAsState()
+
 
     Column(
         modifier = Modifier
@@ -81,7 +83,7 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(),
             Spacer(modifier = Modifier.weight(1f))
 
             // Save button
-            IconButton(onClick = {}) {
+            IconButton(onClick = {viewModel.saveDrawing(filePath, fileName)}) {
                 Icon(painter = painterResource(id = R.drawable.save_icon) ,contentDescription = "Save", tint = Color.Gray)
             }
 
@@ -199,7 +201,7 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(),
 }
 
 @Composable
-fun DrawShapeUI(viewModel: DrawingViewModel = viewModel()) {
+fun DrawShapeUI(viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory)) {
     // header text
     Row(
         modifier = Modifier.padding(horizontal = 32.dp),
@@ -264,7 +266,7 @@ fun DrawShapeUI(viewModel: DrawingViewModel = viewModel()) {
 @Composable
 fun DrawScreenPreview() {
     val navController = rememberNavController() // Mock NavController for previewing
-    val viewModel: DrawingViewModel = viewModel() // Default ViewModel instance
+    val viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory) // Default ViewModel instance
 
     DrawScreen(
         viewModel = viewModel,

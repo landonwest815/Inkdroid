@@ -1,5 +1,7 @@
 package com.example.drawingappall
 
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -63,7 +66,8 @@ fun GalleryScreen(
             // New Drawing button
             IconButton(onClick = {
                 val drawing: Drawing = vm.createFile("Drawing")
-                navController.navigate("draw/${drawing.filePath}/${drawing.fileName}")
+                val encodedFilePath = Uri.encode(drawing.filePath)
+                navController.navigate("draw/${encodedFilePath}/${drawing.fileName}")
             }) {
                 Icon(imageVector = Icons.Default.Add,
                     contentDescription = "Save",
@@ -76,7 +80,7 @@ fun GalleryScreen(
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             for (file in list.asReversed()) {
                 item {
-                    DrawingFileCard(file, navController)
+                    DrawingFileCard(file, navController, vm)
                 }
             }
         }
@@ -85,7 +89,7 @@ fun GalleryScreen(
 }
 
 @Composable
-fun DrawingFileCard(file: Drawing, navController: NavController) {
+fun DrawingFileCard(file: Drawing, navController: NavController, vm: DrawingFileViewModel) {
     Card(modifier = Modifier
         .fillMaxWidth(0.9f)
         .padding(8.dp)
@@ -105,8 +109,20 @@ fun DrawingFileCard(file: Drawing, navController: NavController) {
 
                 Spacer(modifier = Modifier.weight(1f))
 
+                // Delete Button
                 IconButton(onClick = {
-                    navController.navigate("draw/${file.filePath}/${file.fileName}") }) {
+                    vm.deleteFile(file) }) {
+                    Icon(imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = Color.Gray,
+                    )
+                }
+
+                // Edit Button
+                IconButton(onClick = {
+                    // Navigate
+                    val encodedFilePath = Uri.encode(file.filePath)
+                    navController.navigate("draw/${encodedFilePath}/${file.fileName}") }) {
                     Icon(imageVector = Icons.Default.Edit,
                         contentDescription = "Edit",
                         tint = Color.Gray,
@@ -136,6 +152,7 @@ fun DrawingPreview() {
 
     DrawingFileCard(
         Drawing("MyDrawing", "default_preview.png"),
-        navController
+        navController,
+        vm = viewModel(factory = DrawingViewModelProvider.Factory),
     )
 }

@@ -7,6 +7,9 @@ import android.graphics.Path
 import androidx.compose.ui.graphics.Color
 import android.graphics.Color as AndroidColor
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -26,26 +29,26 @@ enum class BrushShape
  * ViewModel for managing a drawable canvas in a Jetpack Compose app.
  * Handles drawing, color selection, and bitmap management.
  */
-class DrawingViewModel : ViewModel() {
+class DrawingViewModel(private val repository: DrawingsRepository) : ViewModel() {
 
-    //only do wen not loading file
-    // Holds the bitmap that serves as the drawing surface
+    //only do when not loading file
+    //Holds the bitmap that serves as the drawing surface
     private val _bitmap = MutableStateFlow(createEmptyBitmap())
     val bitmap: StateFlow<Bitmap> = _bitmap
 
-    // Current drawing color (default: Black)
+    //Current drawing color (default: Black)
     private val _color = MutableStateFlow(Color.Black)
     val color: StateFlow<Color> = _color
 
-    // Shape size for drawing (default: 50px, constrained between 5px and 100px)
+    //Shape size for drawing (default: 50px, constrained between 5px and 100px)
     private val _shapeSize = MutableStateFlow(50f)
     val shapeSize: StateFlow<Float> = _shapeSize
 
-    // Brush shape for drawing
+    //Brush shape for drawing
     private val _brushShape = MutableStateFlow(BrushShape.Circle)
     val brushShape: StateFlow<BrushShape> = _brushShape
 
-    // Paint object for rendering shapes
+    //Paint object for rendering shapes
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
@@ -59,13 +62,28 @@ class DrawingViewModel : ViewModel() {
             Bitmap.createBitmap(BITMAP_WIDTH, BITMAP_HEIGHT, Bitmap.Config.ARGB_8888)
     }
 
-    fun saveDrawing(file: Drawing){
+    //Saves the bitmap using the repository
+    fun saveDrawing(filePath : String, fileName : String){
         //save/update bitmap file
+        repository.saveDrawing(filePath, fileName, bitmap.value)
     }
 
-    fun loadDrawing(file : Drawing){
+    //Loads a image file into the bitmap
+    fun loadDrawing(filePath : String, fileName : String){
         //load file as bitmap
         //always load file created by file view model
+        val loadedBitmap = repository.loadDrawing(filePath, fileName)
+
+        //Load bitmap
+        if (loadedBitmap != null)
+        {
+            _bitmap.value = loadedBitmap
+        }
+        //New file, empty bitmap
+        else
+        {
+            _bitmap.value = createEmptyBitmap()
+        }
     }
 
     //Picks a random color and updates the current drawing color
@@ -161,4 +179,17 @@ class DrawingViewModel : ViewModel() {
         (green * 255).toInt(),
         (blue * 255).toInt()
     )
+
+    object DrawingViewModelProvider {
+        val Factory = viewModelFactory {
+            initializer {
+                DrawingViewModel(
+                    //fetches the application singleton
+                    (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]
+                            //and then extracts the repository in it
+                            as AllApplication).DrawingsRepository
+                )
+            }
+        }
+    }
 }

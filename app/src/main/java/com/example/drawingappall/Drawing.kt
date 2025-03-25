@@ -7,5 +7,4 @@ import androidx.room.PrimaryKey
 data class Drawing(var fileName: String, var filePath: String) {
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0
-
 }
