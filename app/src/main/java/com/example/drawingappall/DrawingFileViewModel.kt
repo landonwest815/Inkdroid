@@ -9,7 +9,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import java.io.File
 
 class DrawingFileViewModel(private val repository: DrawingsRepository, private val context : Context) : ViewModel() {
 

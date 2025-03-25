@@ -64,14 +64,12 @@ class DrawingViewModel(private val repository: DrawingsRepository) : ViewModel()
 
     //Saves the bitmap using the repository
     fun saveDrawing(filePath : String, fileName : String){
-        //save/update bitmap file
         repository.saveDrawing(filePath, fileName, bitmap.value)
     }
 
     //Loads a image file into the bitmap
     fun loadDrawing(filePath : String, fileName : String){
-        //load file as bitmap
-        //always load file created by file view model
+
         val loadedBitmap = repository.loadDrawing(filePath, fileName)
 
         //Load bitmap
