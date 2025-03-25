@@ -3,6 +3,7 @@ package com.example.drawingappall
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
@@ -11,9 +12,9 @@ import java.io.IOException
 
 
 
-class DrawingsRepository(val scope: CoroutineScope,
-                         private val dao: DrawingsDAO) {
-    val drawings = dao.drawings()
+class DrawingsRepository(val scope: CoroutineScope, private val dao: DrawingsDAO) {
+
+    val drawings: Flow<List<Drawing>> = dao.getAllDrawings()
 
     fun createFile( file :Drawing){
         scope.launch {

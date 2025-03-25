@@ -8,8 +8,7 @@ import androidx.room.Query
 import androidx.room.RoomDatabase
 import kotlinx.coroutines.flow.Flow
 
-@Database(entities= [Drawing::class], version = 1, exportSchema = false)
-
+@Database(entities= [Drawing::class], version = 2, exportSchema = false)
 abstract class DrawingsDatabase : RoomDatabase(){
     abstract fun drawingsDao(): DrawingsDAO
 }
@@ -24,6 +23,6 @@ interface DrawingsDAO {
     @Delete
     suspend fun deleteDrawing(data: Drawing)
 
-    @Query("SELECT * from drawingfiles")
-    fun drawings() : Flow<List<Drawing>>
+    @Query("SELECT * from drawing_files")
+    fun getAllDrawings() : Flow<List<Drawing>>
 }

@@ -63,7 +63,7 @@ fun GalleryScreen(
 
             // New Drawing button
             IconButton(onClick = {
-                val drawing: Drawing = vm.createFile("Drawing")
+                val drawing: Drawing = vm.createFile("Drawing_${System.currentTimeMillis()}")
                 val encodedFilePath = Uri.encode(drawing.filePath)
                 navController.navigate("draw/${encodedFilePath}/${drawing.fileName}")
             }) {

@@ -15,7 +15,10 @@ class AllApplication : Application(){
             applicationContext,
             DrawingsDatabase::class.java,
             "Drawings_database"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
+
     }
 
     //create our repository using lazy to access the DB when we need it
