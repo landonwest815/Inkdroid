@@ -1,4 +1,4 @@
-package com.example.drawingappall
+package com.example.drawingappall.views
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,4 +12,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

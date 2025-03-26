@@ -1,4 +1,4 @@
-package com.example.drawingappall
+package com.example.drawingappall.views
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -13,7 +13,7 @@ import androidx.navigation.compose.rememberNavController
 
 @Composable
 fun App() {
-    // allows us to switch between the two screens
+    // allows us to switch between the multiple screens
     val navController = rememberNavController()
 
     Box(
@@ -24,19 +24,33 @@ fun App() {
         Scaffold(
             containerColor = Color.Transparent
         ) { paddingValues ->
+
+            // NavHost manages which screen is currently visible
             NavHost(
                 navController = navController,
                 startDestination = "splash", // start at the splash screen
                 modifier = Modifier.padding(paddingValues)
             ) {
+
+                // Splash screen route
                 composable("splash") {
-                    SplashScreen { navController.navigate("gallery") } // navigate to the draw screen
+                    // On finish, navigate to gallery screen
+                    SplashScreen { navController.navigate("gallery") }
                 }
+
+                // Drawing screen route, with dynamic filepath and filename
                 composable("draw/{filepath}/{filename}") { backStackEntry ->
-                    val filePath: String = backStackEntry.arguments?.getString("filepath").toString()
-                    val fileName: String = backStackEntry.arguments?.getString("filename").toString()
-                    DrawScreen(navController = navController, filePath = filePath, fileName = fileName)
+                    val filePath = backStackEntry.arguments?.getString("filepath").orEmpty()
+                    val fileName = backStackEntry.arguments?.getString("filename").orEmpty()
+
+                    DrawScreen(
+                        navController = navController,
+                        filePath = filePath,
+                        fileName = fileName
+                    )
                 }
+
+                // Gallery screen route
                 composable("gallery") {
                     GalleryScreen(navController = navController)
                 }

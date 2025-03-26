@@ -2,6 +2,7 @@ package com.example.drawingappall
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.drawingappall.TestUtils.testVM
+import com.example.drawingappall.viewModels.BrushShape
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

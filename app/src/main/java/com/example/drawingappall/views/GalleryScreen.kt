@@ -1,4 +1,4 @@
-package com.example.drawingappall
+package com.example.drawingappall.views
 
 import android.net.Uri
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -32,12 +31,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.drawingappall.databaseSetup.Drawing
+import com.example.drawingappall.viewModels.DrawingFileViewModel
+import com.example.drawingappall.viewModels.DrawingViewModelProvider
 import java.io.File
 
 @Composable
@@ -46,11 +46,11 @@ fun GalleryScreen(
     navController: NavController) {
 
     Scaffold(
-        // add new drawing button
+        // Floating action button to add a new drawing
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val drawing: Drawing = vm.createFile("Drawing_${System.currentTimeMillis()}")
+                    val drawing = vm.createFile("Drawing_${System.currentTimeMillis()}")
                     val encodedFilePath = Uri.encode(drawing.filePath)
                     navController.navigate("draw/${encodedFilePath}/${drawing.fileName}")
                 }
@@ -58,41 +58,47 @@ fun GalleryScreen(
                 Icon(Icons.Default.Add, contentDescription = "New Drawing")
             }
         }
-    ) {
-        Column(modifier = Modifier
-        .fillMaxSize()
-        .background(Color(0xFFEEEEEE)) // gray background
-        .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally) {
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFEEEEEE))
+                .padding(padding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-            // header
+            // Header
             Row(
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Text(
-                    "My Drawings",
+                    text = "My Drawings",
                     color = Color.Black,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
-
                 Spacer(modifier = Modifier.weight(1f))
             }
 
-            // grid of all drawings
-            val list by vm.drawings.collectAsState(listOf())
+            // Observe and display list of drawings
+            val list by vm.drawings.collectAsState(emptyList())
+
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier = Modifier.fillMaxSize()
             ) {
                 for (file in list.asReversed()) {
                     item {
-                        DrawingFileCard(file, navController, vm, modifier = Modifier.animateItem())
+                        DrawingFileCard(
+                            file,
+                            navController,
+                            vm,
+                            modifier = Modifier
+                                .animateItem())
                     }
                 }
             }
@@ -107,36 +113,30 @@ fun DrawingFileCard(
     vm: DrawingFileViewModel,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-    ) {
+    Column(modifier = modifier) {
         Card(
-            modifier = Modifier
-                .aspectRatio(1f), // enforce square size
+            modifier = Modifier.aspectRatio(1f) // enforce square aspect ratio
         ) {
             Box(
                 modifier = Modifier
+                    .fillMaxSize()
                     .clickable {
                         val encodedFilePath = Uri.encode(file.filePath)
                         navController.navigate("draw/${encodedFilePath}/${file.fileName}")
                     }
-                    .fillMaxSize()
                     .paint(
                         painter = rememberAsyncImagePainter(
-                            model = File(
-                                file.filePath,
-                                file.fileName
-                            ).absolutePath
+                            model = File(file.filePath, file.fileName).absolutePath
                         )
                     )
             ) {
 
-                // delete button
+                // Delete icon in the top right corner
                 IconButton(
                     onClick = { vm.deleteFile(file) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(0.dp) // small padding from the edges
+                        .padding(0.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
@@ -147,37 +147,14 @@ fun DrawingFileCard(
             }
         }
 
-        // drawing title
+        // Filename displayed under the card
         Text(
             text = file.fileName,
             color = Color.Gray,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
                 .padding(top = 8.dp)
         )
     }
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun GalleryScreenPreview() {
-//
-//    val navController = rememberNavController()
-//
-//    GalleryScreen(
-//        navController = navController
-//    )
-//}
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun DrawingPreview() {
-//
-//    val navController = rememberNavController()
-//
-//    DrawingFileCard(
-//        Drawing("MyDrawing", "default_preview.png"),
-//        navController,
-//        vm = viewModel(factory = DrawingViewModelProvider.Factory),
-//    )
-//}
