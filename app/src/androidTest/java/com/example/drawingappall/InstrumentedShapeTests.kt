@@ -1,7 +1,7 @@
 package com.example.drawingappall
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.drawingappall.TestUtils.testVM
+import com.example.drawingappall.TestUtils.testDrawingVM
 import com.example.drawingappall.viewModels.BrushShape
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
@@ -20,7 +20,7 @@ import org.junit.Assert.*
 @RunWith(AndroidJUnit4::class)
 class InstrumentedShapeTests {
     private fun testChangeSize(size : Float){
-        val vm = testVM();
+        val vm = testDrawingVM();
 
         var callbackFired = false
 
@@ -38,7 +38,7 @@ class InstrumentedShapeTests {
     }
 
     private fun testDrawShape(x : Float, y : Float, viewWidth : Int, viewHeight : Int, brushShape : BrushShape){
-        val vm = testVM();
+        val vm = testDrawingVM();
 
         val before = vm.bitmap.value
 
@@ -123,7 +123,7 @@ class InstrumentedShapeTests {
 
     @Test
     fun testChangeShape() {
-        val vm = testVM();
+        val vm = testDrawingVM();
 
         vm.changeShape(BrushShape.Triangle)
         assertEquals(BrushShape.Triangle, vm.brushShape.value)

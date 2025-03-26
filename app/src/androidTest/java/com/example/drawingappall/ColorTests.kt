@@ -2,7 +2,7 @@ package com.example.drawingappall
 
 import androidx.compose.ui.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.drawingappall.TestUtils.testVM
+import com.example.drawingappall.TestUtils.testDrawingVM
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -12,7 +12,7 @@ class ColorTests {
     // checks that the default color is black when starting app fresh
     @Test
     fun defaultColor(){
-        val vm = testVM();
+        val vm = testDrawingVM();
 
         val black = Color.Black
         val vmColor = vm.color.value
@@ -23,7 +23,7 @@ class ColorTests {
     // checks that picking a random color sets it to a new value
     @Test
     fun pickColorTest() {
-        val vm = testVM();
+        val vm = testDrawingVM();
 
         val initialColor = vm.color.value
 
@@ -35,7 +35,7 @@ class ColorTests {
     // changes color twice and makes sure that each change is different from the previous
     @Test
     fun multipleColorChanges() {
-        val vm = testVM();
+        val vm = testDrawingVM();
 
         val initialColor = vm.color.value
 

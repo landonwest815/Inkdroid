@@ -1,7 +1,7 @@
 package com.example.drawingappall
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.drawingappall.TestUtils.testVM
+import com.example.drawingappall.TestUtils.testDrawingVM
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -16,7 +16,7 @@ class SizeTests {
 
     @Test
     fun defaultSize(){
-        val vm = testVM();
+        val vm = testDrawingVM();
         val start = vm.shapeSize.value
         val size = 50f
         assertEquals(size, start)
@@ -24,7 +24,7 @@ class SizeTests {
 
     @Test
     fun sizeUpsizeDown(){
-        val vm = testVM();
+        val vm = testDrawingVM();
         vm.updateSize(89f)
         assertEquals(89f, vm.shapeSize.value)
 
@@ -34,7 +34,7 @@ class SizeTests {
 
     @Test
     fun sizeup(){
-        val vm = testVM();
+        val vm = testDrawingVM();
         vm.updateSize(67f)
         assertEquals(67f, vm.shapeSize.value)
 
@@ -42,14 +42,14 @@ class SizeTests {
 
     @Test
     fun sizeDown(){
-        val vm = testVM();
+        val vm = testDrawingVM();
         vm.updateSize(25f)
         assertEquals(25f, vm.shapeSize.value)
     }
 
     @Test
     fun maxSize(){
-        val vm = testVM();
+        val vm = testDrawingVM();
         vm.updateSize(100f)
         assertEquals(100f, vm.shapeSize.value)
 
@@ -59,7 +59,7 @@ class SizeTests {
 
     @Test
     fun minSize(){
-        val vm = testVM();
+        val vm = testDrawingVM();
         vm.updateSize(5f)
         assertEquals(5f, vm.shapeSize.value)
 

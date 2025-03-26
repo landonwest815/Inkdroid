@@ -19,10 +19,16 @@
       <SelectionState runConfigName="ColorTests">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="InstrumentedShapeTests">
+      <SelectionState runConfigName="SizeTests">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="SizeTests">
+      <SelectionState runConfigName="DrawingFileTests">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="testSelectShapes()">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="testDrawingAppearsInGalleryAfterSaveAndClose()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
