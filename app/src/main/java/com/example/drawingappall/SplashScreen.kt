@@ -1,8 +1,14 @@
 package com.example.drawingappall
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,7 +41,7 @@ fun SplashScreen(onNavigateToGallery: () -> Unit) {
 
             // welcome prompt
             Text(
-                text = "Welcome to our\ndrawing app!",
+                text = "drawALL",
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
                 color = Color.Black,
@@ -54,17 +60,36 @@ fun SplashScreen(onNavigateToGallery: () -> Unit) {
                 color = Color.Gray,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
+                lineHeight = 24.sp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp)
+                    .padding(bottom = 4.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // button to navigate to the draw screen
-            Button(onClick = onNavigateToGallery) {
-                Text("Let's Draw")
+            Button(
+                onClick = onNavigateToGallery,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp) // tighter padding
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Let's Draw",
+                        color = Color.Black,
+                        modifier = Modifier.padding(start = 12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp)) // reduce gap
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Arrow Right",
+                        tint = Color.Black,
+                        modifier = Modifier.size(18.dp) // optional: shrink icon if needed
+                    )
+                }
             }
+
         }
     }
 }

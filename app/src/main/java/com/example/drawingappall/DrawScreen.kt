@@ -1,9 +1,11 @@
 package com.example.drawingappall
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +19,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -32,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -49,17 +54,15 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMode
                navController: NavController,
                filePath: String, fileName: String) {
 
-    //Attempt to load
     //LaunchedEffect allows edits to not be lost when view reloads
     LaunchedEffect(filePath, fileName) {
         viewModel.loadDrawing(filePath, fileName)
     }
 
-
+    // collect the viewmodel data
     val bitmap by viewModel.bitmap.collectAsState()
     val shapeSize by viewModel.shapeSize.collectAsState()
     val color by viewModel.color.collectAsState()
-
 
     Column(
         modifier = Modifier
@@ -67,33 +70,38 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMode
             .verticalScroll(rememberScrollState())
             .background(Color(0xFFEEEEEE)) // gray background
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        // push all content down to center the UI on the screen
-        // there is another one at the bottom to push up
-        Spacer(modifier = Modifier.weight(1f))
 
-        // title + quit ("x") and save button
-        Row(
-            modifier = Modifier.padding(horizontal = 32.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // back button + drawing title
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text(fileName,
+            IconButton(
+                onClick = {
+                    // save AND close
+                    viewModel.saveDrawing(filePath, fileName)
+                    navController.popBackStack()
+                },
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Save & Close",
+                    tint = Color.Gray
+                )
+            }
+
+            Text(
+                text = fileName,
                 color = Color.Gray,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold)
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Save button
-            IconButton(onClick = {viewModel.saveDrawing(filePath, fileName)}) {
-                Icon(painter = painterResource(id = R.drawable.save_icon) ,contentDescription = "Save", tint = Color.Gray)
-            }
-
-            // "x" button
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
-            }
+                fontWeight = FontWeight.SemiBold
+            )
         }
 
         // drawable canvas
@@ -171,13 +179,21 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMode
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // color button + reset button
-        Row(modifier = Modifier.padding(horizontal = 32.dp),
-            verticalAlignment = Alignment.CenterVertically) {
+        DrawShapeUI(viewModel, color)
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // color button + reset button
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             // color button
             Button(
                 onClick = { viewModel.pickColor() },
+                modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = color)
             ) {
                 Text("Change Color", color = Color.White)
@@ -188,37 +204,17 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMode
             // reset button
             Button(
                 onClick = { viewModel.resetCanvas() },
+                modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
             ) {
                 Text("Reset Canvas", color = Color.White)
             }
         }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        DrawShapeUI(viewModel)
-
-        // pushes content upwards to center the UI on the screen
-        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun DrawShapeUI(viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory)) {
-    // header text
-    Row(
-        modifier = Modifier.padding(horizontal = 32.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            "Shapes",
-            color = Color.Gray,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-
-    Spacer(modifier = Modifier.height(4.dp))
+fun DrawShapeUI(viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory), color: Color) {
 
     // buttons
     Row(
@@ -226,9 +222,17 @@ fun DrawShapeUI(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMod
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        val circleIcon = painterResource(id = R.drawable.circle_icon)
-        val triangleIcon = painterResource(id = R.drawable.triangle_icon)
-        val squareIcon = painterResource(id = R.drawable.square_icon)
+        Text("Shape",
+            color = Color.Gray,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold)
+
+        val selected by viewModel.brushShape.collectAsState()
+        val circleIcon = painterResource(id = R.drawable.circle)
+        val triangleIcon = painterResource(id = R.drawable.triangle)
+        val squareIcon = painterResource(id = R.drawable.square)
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         // Square Button
         Button(
@@ -236,8 +240,13 @@ fun DrawShapeUI(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMod
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
             modifier = Modifier.weight(1f)
         ) {
-
-            Image(painter = squareIcon, contentDescription = "Square Button")
+            Image(
+                painter = squareIcon,
+                contentDescription = "Square Button",
+                colorFilter = ColorFilter.tint(
+                    if (selected == BrushShape.Square) color else Color(0xFFBDBDBD)
+                )
+            )
         }
 
         Spacer(modifier = Modifier.width(4.dp))
@@ -248,9 +257,15 @@ fun DrawShapeUI(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMod
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
             modifier = Modifier.weight(1f)
         ) {
-
-            Image(painter = circleIcon, contentDescription = "Circle Button")
+            Image(
+                painter = circleIcon,
+                contentDescription = "Circle Button",
+                colorFilter = ColorFilter.tint(
+                    if (selected == BrushShape.Circle) color else Color(0xFFBDBDBD)
+                )
+            )
         }
+
         Spacer(modifier = Modifier.width(4.dp))
 
         // Triangle Button
@@ -259,22 +274,27 @@ fun DrawShapeUI(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMod
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
             modifier = Modifier.weight(1f)
         ) {
-
-            Image(painter = triangleIcon, contentDescription = "Triangle Button")
+            Image(
+                painter = triangleIcon,
+                contentDescription = "Triangle Button",
+                colorFilter = ColorFilter.tint(
+                    if (selected == BrushShape.Triangle) color else Color(0xFFBDBDBD)
+                )
+            )
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DrawScreenPreview() {
-    val navController = rememberNavController() // Mock NavController for previewing
-    val viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory) // Default ViewModel instance
-
-    DrawScreen(
-        viewModel = viewModel,
-        navController = navController,
-        "MyDrawing",
-        "default_preview.png"
-    )
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun DrawScreenPreview() {
+//    val navController = rememberNavController() // Mock NavController for previewing
+//    val viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory) // Default ViewModel instance
+//
+//    DrawScreen(
+//        viewModel = viewModel,
+//        navController = navController,
+//        "MyDrawing",
+//        "default_preview.png"
+//    )
+//}
