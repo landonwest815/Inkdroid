@@ -32,6 +32,10 @@ class DrawingFileViewModel(private val repository: DrawingsRepository, private v
     {
         repository.deleteDrawing(file)
     }
+
+    fun renameDrawing(filePath: String, oldName: String, newName: String, onResult: (Boolean) -> Unit) {
+        repository.renameDrawing(filePath, oldName, newName, onResult)
+    }
 }
 
 object DrawingViewModelProvider {

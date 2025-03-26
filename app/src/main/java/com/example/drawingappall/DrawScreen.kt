@@ -1,8 +1,8 @@
 package com.example.drawingappall
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -20,8 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -29,10 +28,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,22 +44,25 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun DrawScreen(viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory),
-               navController: NavController,
-               filePath: String, fileName: String) {
+fun DrawScreen(
+    vm: DrawingFileViewModel = viewModel(factory = DrawingViewModelProvider.Factory),
+    viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory),
+    navController: NavController,
+    filePath: String, fileName: String) {
 
-    //LaunchedEffect allows edits to not be lost when view reloads
-    LaunchedEffect(filePath, fileName) {
-        viewModel.loadDrawing(filePath, fileName)
+    // allows for real time UI updates when file name is changed
+    var currentFileName by remember { mutableStateOf(fileName) }
+
+    // allows for edits to not be lost when UI is refreshed during color change
+    LaunchedEffect(filePath, currentFileName) {
+        viewModel.loadDrawing(filePath, currentFileName)
     }
 
     // collect the viewmodel data
@@ -74,17 +80,17 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMode
         verticalArrangement = Arrangement.Center
     ) {
 
-        // back button + drawing title
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 32.dp),
             contentAlignment = Alignment.Center
         ) {
+            // back button (save, as well)
             IconButton(
                 onClick = {
                     // save AND close
-                    viewModel.saveDrawing(filePath, fileName)
+                    viewModel.saveDrawing(filePath, currentFileName)
                     navController.popBackStack()
                 },
                 modifier = Modifier.align(Alignment.CenterStart)
@@ -96,11 +102,17 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMode
                 )
             }
 
-            Text(
-                text = fileName,
-                color = Color.Gray,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
+            // drawing title (clickable)
+            RenameableFileName(
+                fileName = currentFileName,
+                onRename = { newName, resultCallback ->
+                    vm.renameDrawing(filePath, currentFileName, newName) { success ->
+                        if (success) {
+                            currentFileName = newName
+                        }
+                        resultCallback(success)
+                    }
+                }
             )
         }
 
@@ -212,6 +224,84 @@ fun DrawScreen(viewModel: DrawingViewModel = viewModel(factory = DrawingViewMode
         }
     }
 }
+
+@Composable
+fun RenameableFileName(
+    fileName: String,
+    onRename: (String, (Boolean) -> Unit) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf(fileName) }
+    var showError by remember { mutableStateOf(false) }
+
+    Text(
+        text = fileName,
+        color = Color.Gray,
+        fontSize = 18.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier
+            .clickable {
+                showDialog = true
+                newName = fileName
+                showError = false
+            }
+            .padding(top = 8.dp)
+    )
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Rename Drawing") },
+            text = {
+                Column {
+                    TextField(
+                        value = newName,
+                        onValueChange = {
+                            newName = it
+                            showError = false
+                        },
+                        singleLine = true
+                    )
+                    if (showError) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Name already exists",
+                            color = Color.Red,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Text(
+                    "Rename",
+                    modifier = Modifier.clickable {
+                        if (newName.isNotBlank() && newName != fileName) {
+                            onRename(newName) { success ->
+                                if (success) {
+                                    showDialog = false
+                                } else {
+                                    showError = true
+                                }
+                            }
+                        } else {
+                            showDialog = false
+                        }
+                    }
+                )
+            },
+            dismissButton = {
+                Text(
+                    "Cancel",
+                    modifier = Modifier.clickable {
+                        showDialog = false
+                    }
+                )
+            }
+        )
+    }
+}
+
 
 @Composable
 fun DrawShapeUI(viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory), color: Color) {

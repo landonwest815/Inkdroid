@@ -77,4 +77,34 @@ class DrawingsRepository(val scope: CoroutineScope, private val dao: DrawingsDAO
             dao.deleteDrawing(file)
         }
     }
+
+    fun renameDrawing(filePath: String, oldName: String, newName: String, onResult: (Boolean) -> Unit) {
+        val oldFile = File(filePath, oldName)
+        val newFile = File(filePath, newName)
+
+        if (oldFile.exists()) {
+            scope.launch {
+                val exists = dao.fileNameExists(newName) > 0
+                if (exists) {
+                    onResult(false) // name already taken
+                    return@launch
+                }
+
+                val renamed = oldFile.renameTo(newFile)
+                if (renamed) {
+                    val oldDrawing = dao.getDrawingByName(oldName)
+                    if (oldDrawing != null) {
+                        val updatedDrawing = Drawing(newName, filePath).apply { id = oldDrawing.id }
+                        dao.deleteDrawing(oldDrawing)
+                        dao.createDrawing(updatedDrawing)
+                    }
+                    onResult(true) // rename successful
+                } else {
+                    onResult(false) // file rename failed
+                }
+            }
+        } else {
+            onResult(false) // file doesn't exist
+        }
+    }
 }

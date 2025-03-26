@@ -24,4 +24,11 @@ interface DrawingsDAO {
 
     @Query("SELECT * from drawing_files")
     fun getAllDrawings() : Flow<List<Drawing>>
+
+    @Query("SELECT * FROM drawing_files WHERE fileName = :fileName LIMIT 1")
+    suspend fun getDrawingByName(fileName: String): Drawing?
+
+    @Query("SELECT COUNT(*) FROM drawing_files WHERE fileName = :fileName")
+    suspend fun fileNameExists(fileName: String): Int
+
 }
