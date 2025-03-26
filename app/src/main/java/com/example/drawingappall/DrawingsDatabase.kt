@@ -13,7 +13,6 @@ abstract class DrawingsDatabase : RoomDatabase(){
     abstract fun drawingsDao(): DrawingsDAO
 }
 
-
 @Dao
 interface DrawingsDAO {
 
