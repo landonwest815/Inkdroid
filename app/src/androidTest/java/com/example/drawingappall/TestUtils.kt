@@ -1,9 +1,11 @@
 package com.example.drawingappall
 
 import android.content.Context
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.example.drawingappall.databaseSetup.DrawingsDatabase
+import com.example.drawingappall.databaseSetup.DrawingsRepository
+import com.example.drawingappall.viewModels.DrawingViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 

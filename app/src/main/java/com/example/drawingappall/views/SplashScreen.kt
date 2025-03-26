@@ -1,11 +1,9 @@
-package com.example.drawingappall
+package com.example.drawingappall.views
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -21,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.drawingappall.R
 
 @Composable
 fun SplashScreen(onNavigateToGallery: () -> Unit) {
@@ -32,14 +31,14 @@ fun SplashScreen(onNavigateToGallery: () -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-            // paint icon
+            // Paint icon at the top
             Image(
                 painter = painterResource(id = R.drawable.painticon),
                 contentDescription = "Paint Icon",
                 modifier = Modifier.size(100.dp)
             )
 
-            // welcome prompt
+            // App name/title
             Text(
                 text = "drawALL",
                 style = MaterialTheme.typography.headlineMedium,
@@ -52,7 +51,7 @@ fun SplashScreen(onNavigateToGallery: () -> Unit) {
                     .padding(bottom = 16.dp)
             )
 
-            // project authors
+            // Authors list
             Text(
                 text = "Andy Chadwick\nLandon Evans\nLandon West",
                 style = MaterialTheme.typography.headlineMedium,
@@ -68,7 +67,7 @@ fun SplashScreen(onNavigateToGallery: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // button to navigate to the draw screen
+            // Navigate to gallery screen
             Button(
                 onClick = onNavigateToGallery,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
