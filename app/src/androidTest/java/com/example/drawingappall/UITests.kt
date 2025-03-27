@@ -3,8 +3,6 @@ package com.example.drawingappall
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -88,7 +86,6 @@ class UITests {
         composeTestRule.onNodeWithText("Change Color").performClick()
     }
 
-
     @Test
     fun testUpdateBrushSizeWithSlider() {
         // Navigate to Gallery
@@ -164,6 +161,28 @@ class UITests {
 
         // Assert new name now displayed in header
         composeTestRule.onNodeWithText("RenamedDrawing").assertExists()
+    }
+
+    @Test
+    fun testRenameDrawingGalleryPermanence() {
+        // Go to gallery and create new drawing
+        composeTestRule.onNodeWithText("Let's Draw").performClick()
+        composeTestRule.onNodeWithContentDescription("New Drawing").performClick()
+
+        // Tap filename to open rename dialog
+        composeTestRule.onNodeWithTag("FileNameDisplay").performClick()
+
+        // Enter new name in text field
+        composeTestRule.onNodeWithTag("RenameInput").performTextClearance()
+        composeTestRule.onNodeWithTag("RenameInput").performTextInput("RenamedDrawing")
+
+        // Confirm rename
+        composeTestRule.onNodeWithTag("RenameConfirm").performClick()
+
+        // Save + Close and return to gallery
+        composeTestRule.onNodeWithContentDescription("Save & Close").performClick()
+
+        composeTestRule.onNodeWithTag("FileName_RenamedDrawing").assertExists()
     }
 
     @Test

@@ -80,8 +80,6 @@ class DrawingFileTests {
         assertTrue(drawing.fileName.isBlank() || drawing.fileName == "")
     }
 
-    // test file renaming to existing name
-
     @Test
     fun testRenameToExistingNameFails() = runBlocking {
         val vm = testDrawingFileVM()
@@ -103,8 +101,19 @@ class DrawingFileTests {
         val vm = testDrawingFileVM()
         val drawing = vm.createFile("disk_check")
 
-        val file = java.io.File(drawing.filePath)
+        val file = java.io.File(drawing.filePath, drawing.fileName)
         assertTrue(file.exists())
+    }
+
+    @Test
+    fun testPhysicalFileDeleted() {
+        val vm = testDrawingFileVM()
+        val drawing = vm.createFile("disk_check2")
+
+        vm.deleteFile(drawing)
+
+        val file = java.io.File(drawing.filePath, drawing.fileName)
+        assertFalse(file.exists())
     }
 
     @Test

@@ -132,7 +132,6 @@ fun DrawingFileCard(
                         )
                     )
             ) {
-
                 // Delete icon in the top right corner
                 IconButton(
                     onClick = { vm.deleteFile(file) },
