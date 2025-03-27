@@ -141,7 +141,7 @@ private fun DrawScreenHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp),
+            .padding(horizontal = 25.dp),
         contentAlignment = Alignment.Center
     ) {
         // Save and go back
