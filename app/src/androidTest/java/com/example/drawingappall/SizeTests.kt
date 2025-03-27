@@ -18,7 +18,7 @@ class SizeTests {
     fun defaultSize(){
         val vm = testDrawingVM();
         val start = vm.shapeSize.value
-        val size = 50f
+        val size = 66f
         assertEquals(size, start)
     }
 

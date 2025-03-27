@@ -22,13 +22,7 @@
       <SelectionState runConfigName="SizeTests">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="DrawingFileTests">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="testSelectShapes()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="testDrawingAppearsInGalleryAfterSaveAndClose()">
+      <SelectionState runConfigName="Tests in 'com.example.drawingappall'">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
