@@ -40,6 +40,31 @@ class DrawingFileTests {
     }
 
     @Test
+    fun testCreateDeleteCreateFile() {
+        val vm = testDrawingFileVM()
+        val fileName = "test_drawing"
+
+        val drawing = vm.createFile(fileName)
+
+        assertEquals(fileName, drawing.fileName)
+        assertTrue(drawing.filePath.contains("files"))
+
+        vm.deleteFile(drawing)
+
+        // Confirm it's no longer in the drawings list (give it a moment to update)
+        runBlocking {
+            delay(1000)
+            val stillExists = vm.drawings.value.any { it.fileName == drawing.fileName }
+            assertFalse(stillExists)
+        }
+
+        val newDrawing = vm.createFile(fileName)
+
+        assertEquals(fileName, newDrawing.fileName)
+        assertTrue(newDrawing.filePath.contains("files"))
+    }
+
+    @Test
     fun testRenameFileSuccess() = runBlocking {
         val vm = testDrawingFileVM()
         val oldName = "old_name"
