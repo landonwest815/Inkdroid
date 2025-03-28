@@ -97,6 +97,7 @@ fun DrawScreen(
         DrawScreenHeader(
             currentFileName = currentFileName,
             onRename = { newName, resultCallback ->
+                viewModel.saveDrawing(filePath, currentFileName)
                 vm.renameDrawing(filePath, currentFileName, newName) { success ->
                     if (success) currentFileName = newName
                     resultCallback(success)
@@ -213,6 +214,7 @@ fun RenameableFileName(
             confirmButton = {
                 Text("Rename", modifier = Modifier
                     .clickable {
+
                         if (newName.isNotBlank() && newName != fileName) {
                             onRename(newName) { success ->
                                 if (success) showDialog = false else showError = true
