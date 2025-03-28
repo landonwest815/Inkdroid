@@ -16,13 +16,16 @@
       <SelectionState runConfigName="UITests">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="ColorTests">
+      <SelectionState runConfigName="Tests in 'com.example.drawingappall'">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="InstrumentedShapeTests">
+      <SelectionState runConfigName="testRenameDrawingGalleryPermanence()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="SizeTests">
+      <SelectionState runConfigName="testPhysicalFileDeleted()">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="DrawingFileTests">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

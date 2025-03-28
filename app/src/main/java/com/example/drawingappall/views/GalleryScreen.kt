@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -124,19 +125,20 @@ fun DrawingFileCard(
                         val encodedFilePath = Uri.encode(file.filePath)
                         navController.navigate("draw/${encodedFilePath}/${file.fileName}")
                     }
+                    .testTag("DrawingCard_${file.fileName}")
                     .paint(
                         painter = rememberAsyncImagePainter(
                             model = File(file.filePath, file.fileName).absolutePath
                         )
                     )
             ) {
-
                 // Delete icon in the top right corner
                 IconButton(
                     onClick = { vm.deleteFile(file) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(0.dp)
+                        .testTag("Delete_${file.fileName}")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
@@ -155,6 +157,7 @@ fun DrawingFileCard(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 8.dp)
+                .testTag("FileName_${file.fileName}")
         )
     }
 }

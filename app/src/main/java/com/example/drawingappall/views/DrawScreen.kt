@@ -179,11 +179,13 @@ fun RenameableFileName(
         color = Color.Gray,
         fontSize = 21.sp,
         fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.clickable {
-            showDialog = true
-            newName = fileName
-            showError = false
-        }
+        modifier = Modifier
+            .clickable {
+                showDialog = true
+                newName = fileName
+                showError = false
+            }
+            .testTag("FileNameDisplay")
     )
 
     // shown when the file name is clicked on
@@ -199,7 +201,8 @@ fun RenameableFileName(
                             newName = it
                             showError = false
                         },
-                        singleLine = true
+                        singleLine = true,
+                        modifier = Modifier.testTag("RenameInput")
                     )
                     if (showError) {
                         Spacer(modifier = Modifier.height(8.dp))
@@ -208,15 +211,18 @@ fun RenameableFileName(
                 }
             },
             confirmButton = {
-                Text("Rename", modifier = Modifier.clickable {
-                    if (newName.isNotBlank() && newName != fileName) {
-                        onRename(newName) { success ->
-                            if (success) showDialog = false else showError = true
+                Text("Rename", modifier = Modifier
+                    .clickable {
+                        if (newName.isNotBlank() && newName != fileName) {
+                            onRename(newName) { success ->
+                                if (success) showDialog = false else showError = true
+                            }
+                        } else {
+                            showDialog = false
                         }
-                    } else {
-                        showDialog = false
                     }
-                })
+                    .testTag("RenameConfirm")
+                )
             },
             dismissButton = {
                 Text("Cancel", modifier = Modifier.clickable { showDialog = false })
@@ -339,7 +345,9 @@ private fun RowScope.ShapeButton(
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-        modifier = Modifier.weight(1f)
+        modifier = Modifier
+            .weight(1f)
+            .testTag("${shape.name}Button")
     ) {
         Image(
             painter = icon,
