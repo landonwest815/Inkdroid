@@ -1,3 +1,6 @@
+import org.gradle.kotlin.dsl.android
+import org.gradle.kotlin.dsl.dependencies
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -12,7 +15,8 @@ android {
 
     defaultConfig {
         applicationId = "com.example.drawingappall"
-        minSdk = 35
+        minSdk = 31
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
