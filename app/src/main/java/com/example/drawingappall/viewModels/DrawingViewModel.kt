@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.drawingappall.databaseSetup.AllApplication
 import com.example.drawingappall.databaseSetup.DrawingsRepository
+import com.example.drawingappall.jni.ImageModification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -55,6 +56,8 @@ class DrawingViewModel(
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
+
+    private val _bitmapEditor = ImageModification()
 
     companion object {
         private const val BITMAP_WIDTH = 800
@@ -106,11 +109,13 @@ class DrawingViewModel(
     // Blur drawing
     fun blur() {
         Log.e("drawingViewModel", "Get Blurred")
+        _bitmapEditor.blur(bitmap.value)
     }
 
     // Sharpen drawing
     fun sharpen() {
         Log.e("drawingViewModel", "Get Sharpened")
+        _bitmapEditor.sharpen(bitmap.value)
     }
 
 
