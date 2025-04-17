@@ -370,8 +370,7 @@ private fun ActionButtons(
     color: Color
 ) {
     Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp),){
+            .fillMaxWidth()){
         Row(
             modifier = Modifier
                 .fillMaxWidth()
