@@ -128,6 +128,8 @@ fun DrawScreen(
         ActionButtons(
             onPickColor = viewModel::pickColor,
             onReset = viewModel::resetCanvas,
+            onBlur = viewModel::blur,
+            onSharpen = viewModel::sharpen,
             color = color
         )
     }
@@ -363,30 +365,60 @@ private fun RowScope.ShapeButton(
 private fun ActionButtons(
     onPickColor: () -> Unit,
     onReset: () -> Unit,
+    onBlur: () -> Unit,
+    onSharpen: () -> Unit,
     color: Color
 ) {
-    Row(
-        modifier = Modifier
+    Column(modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Button(
-            onClick = onPickColor,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(containerColor = color)
+            .padding(horizontal = 32.dp),){
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Change Color", color = Color.White)
+            Button(
+                onClick = onPickColor,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = color)
+            ) {
+                Text("Change Color", color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Button(
+                onClick = onReset,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Reset Canvas", color = Color.White)
+            }
         }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Button(
-            onClick = onReset,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Reset Canvas", color = Color.White)
+            Button(
+                onClick = onBlur,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = color)
+            ) {
+                Text("Blur", color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Button(
+                onClick = onSharpen,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            ) {
+                Text("Sharpen", color = Color.White)
+            }
         }
     }
 }

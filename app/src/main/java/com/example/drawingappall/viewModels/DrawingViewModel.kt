@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import android.graphics.Color as AndroidColor
 import androidx.lifecycle.ViewModel
@@ -100,6 +101,16 @@ class DrawingViewModel(
                 blue = Random.nextFloat()
             )
         }
+    }
+
+    // Blur drawing
+    fun blur() {
+        Log.e("drawingViewModel", "Get Blurred")
+    }
+
+    // Sharpen drawing
+    fun sharpen() {
+        Log.e("drawingViewModel", "Get Sharpened")
     }
 
 
