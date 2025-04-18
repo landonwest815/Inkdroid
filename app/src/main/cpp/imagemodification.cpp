@@ -12,14 +12,14 @@ JNIEXPORT void JNICALL
 Java_com_example_drawingappall_jni_ImageModification_blur(JNIEnv *env, jobject thiz, jobject bitmap) {
     LOGI("Never");
     // TODO: implement blur()
-//    AndroidBitmapInfo info;
-//    void *pixels;
-//    AndroidBitmap_getInfo(env, bitmap, &info);
-//    AndroidBitmap_lockPixels(env, bitmap, &pixels);
-//
-//
-//
-//    AndroidBitmap_unlockPixels(env, bitmap);
+/*    AndroidBitmapInfo info;
+    void *pixels;
+    AndroidBitmap_getInfo(env, bitmap, &info);
+    AndroidBitmap_lockPixels(env, bitmap, &pixels);
+
+
+
+    AndroidBitmap_unlockPixels(env, bitmap);*/
 }
 
 extern "C"
