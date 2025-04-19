@@ -16,13 +16,6 @@ import kotlinx.coroutines.flow.stateIn
 
 class DrawingFileViewModel(private val repository: DrawingsRepository, private val context : Context) : ViewModel() {
 
-    // Observe the list of drawings as a StateFlow
-    val drawings: StateFlow<List<Drawing>> = repository.drawings.stateIn(
-        scope = repository.scope,
-        started = SharingStarted.WhileSubscribed(),
-        initialValue = emptyList() // start with an empty list
-    )
-
     // Creates a new file and saves an empty bitmap into it
     fun createFile(name: String): Drawing {
         val filePath = context.filesDir.absolutePath
@@ -49,6 +42,30 @@ class DrawingFileViewModel(private val repository: DrawingsRepository, private v
         onResult: (Boolean) -> Unit
     ) {
         repository.renameDrawing(filePath, oldName, newName, onResult)
+    }
+
+    // Observe the list of drawings as a StateFlow
+    val drawings: StateFlow<List<Drawing>> = repository.drawings.stateIn(
+        scope = repository.scope,
+        started = SharingStarted.WhileSubscribed(),
+        initialValue = emptyList() // start with an empty list
+    )
+
+    // Observe the list of drawings as a StateFlow
+    val uploadedDrawings: StateFlow<List<Drawing>> = repository.drawings.stateIn(
+        scope = repository.scope,
+        started = SharingStarted.WhileSubscribed(),
+        initialValue = emptyList() // start with an empty list
+    )
+
+    // Uploads the specified drawing file
+    fun uploadFile(file: Drawing) {
+
+    }
+
+    // Downloads the specified drawing file
+    fun downloadFile(file: Drawing) {
+
     }
 }
 

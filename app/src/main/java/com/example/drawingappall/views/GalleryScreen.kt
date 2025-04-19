@@ -1,6 +1,7 @@
 package com.example.drawingappall.views
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,8 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -34,6 +41,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.drawingappall.databaseSetup.Drawing
@@ -41,10 +51,13 @@ import com.example.drawingappall.viewModels.DrawingFileViewModel
 import com.example.drawingappall.viewModels.DrawingViewModelProvider
 import java.io.File
 
+
 @Composable
 fun GalleryScreen(
     vm: DrawingFileViewModel = viewModel(factory = DrawingViewModelProvider.Factory),
-    navController: NavController) {
+    navController: NavController
+) {
+    var localImages by remember { mutableStateOf<Boolean>(true) } // Toggle between "My Images" and "Uploaded Images"
 
     Scaffold(
         // Floating action button to add a new drawing
@@ -69,22 +82,30 @@ fun GalleryScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // Header
+            // Header with toggle
             Row(
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "My Drawings",
+                    text = if (localImages) "My Drawings" else "Uploaded Images",
                     color = Color.Black,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.weight(1f))
+                // Toggle Button
+                IconButton(onClick =
+                    {
+                        localImages = !localImages
+                        //Log.d("localImages", "localImages $localImages")
+                    }) {
+                    Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "Toggle Images")
+                }
             }
 
             // Observe and display list of drawings
-            val list by vm.drawings.collectAsState(emptyList())
+            val list by if (localImages) vm.drawings.collectAsState(emptyList()) else vm.uploadedDrawings.collectAsState(emptyList())
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -98,8 +119,8 @@ fun GalleryScreen(
                             file,
                             navController,
                             vm,
-                            modifier = Modifier
-                                .animateItem())
+                            localImages
+                        )
                     }
                 }
             }
@@ -112,8 +133,11 @@ fun DrawingFileCard(
     file: Drawing,
     navController: NavController,
     vm: DrawingFileViewModel,
+    localImages: Boolean,
     modifier: Modifier = Modifier
 ) {
+    var isDownloaded by remember { mutableStateOf(false) }
+
     Column(modifier = modifier) {
         Card(
             modifier = Modifier.aspectRatio(1f) // enforce square aspect ratio
@@ -132,19 +156,54 @@ fun DrawingFileCard(
                         )
                     )
             ) {
-                // Delete icon in the top right corner
-                IconButton(
-                    onClick = { vm.deleteFile(file) },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(0.dp)
-                        .testTag("Delete_${file.fileName}")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Delete",
-                        tint = Color.Gray
-                    )
+                // Conditionally render the buttons based on the localImages state
+                if (localImages) {
+                    // Delete icon for local images
+                    IconButton(
+                        onClick = { vm.deleteFile(file) },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(0.dp)
+                            .testTag("Delete_${file.fileName}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Delete",
+                            tint = Color.Gray
+                        )
+                    }
+
+                    // Upload button for local images
+                    IconButton(
+                        onClick = { vm.uploadFile(file) },
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(0.dp)
+                            .testTag("UploadButton_${file.fileName}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Upload"
+                        )
+                    }
+                } else {
+                    // Download button for non-local images
+                    IconButton(
+                        onClick =
+                            {
+                                vm.downloadFile(file)
+                                isDownloaded = true // can implement !isDownloaded and un-downloading a file
+                            },
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(0.dp)
+                            .testTag("DownloadButton_${file.fileName}")
+                    ) {
+                        Icon(
+                            imageVector = if (isDownloaded) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Download"
+                        )
+                    }
                 }
             }
         }
