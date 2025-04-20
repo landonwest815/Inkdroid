@@ -30,7 +30,8 @@ fun Application.configureRouting(
       helloRoute()
     }
 
-    authenticate {
+    //TODO user accounts
+    //authenticate {
       route("/api/notes") {
         noteRoute(notesRepository)
       }
@@ -38,7 +39,11 @@ fun Application.configureRouting(
       route("/api/upload"){
         uploadRoute()
       }
-    }
+
+      route("/api/download"){
+        downloadRoute()
+      }
+    //}
   }
 }
 

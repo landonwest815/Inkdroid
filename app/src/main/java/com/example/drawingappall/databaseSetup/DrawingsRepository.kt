@@ -32,6 +32,14 @@ class DrawingsRepository(
     }
 
     /**
+     * Saves the given [bitmap] to the specified drawing file.
+     */
+    fun saveDrawing(drawing : Drawing, bitmap: Bitmap)
+    {
+        saveDrawing(drawing.filePath, drawing.fileName, bitmap)
+    }
+
+    /**
      * Saves the given [bitmap] to the specified [filePath] and [fileName].
      */
     fun saveDrawing(filePath: String, fileName: String, bitmap: Bitmap) {
@@ -43,6 +51,14 @@ class DrawingsRepository(
         } catch (e: IOException) {
             e.printStackTrace()
         }
+    }
+
+    /**
+     * Loads a drawing from disk.
+     * Returns null if the file doesn't exist (e.g., when creating a new drawing).
+     */
+    fun loadDrawing(drawing : Drawing): Bitmap? {
+        return  loadDrawing(drawing.filePath, drawing.fileName)
     }
 
     /**
@@ -107,7 +123,7 @@ class DrawingsRepository(
             if (renamed) {
                 val oldDrawing = dao.getDrawingByName(oldName)
                 if (oldDrawing != null) {
-                    val updatedDrawing = Drawing(newName, filePath).apply {
+                    val updatedDrawing = Drawing(newName, filePath, oldDrawing.storageLocation).apply {
                         id = oldDrawing.id
                     }
                     dao.deleteDrawing(oldDrawing)
@@ -116,6 +132,40 @@ class DrawingsRepository(
                 onResult(true)
             } else {
                 onResult(false) // File rename failed
+            }
+        }
+    }
+
+    /**
+     * Changes a drawings storage location
+     */
+    fun changeStorageLocation(
+        drawing : Drawing,
+        storageLocation: StorageLocation
+    ) {
+        scope.launch {
+            val updatedDrawing = Drawing(drawing.fileName, drawing.filePath, storageLocation).apply {
+                id = drawing.id
+            }
+
+            dao.deleteDrawing(drawing)
+            dao.createDrawing(updatedDrawing)
+        }
+    }
+
+    /**
+     * Checks if a name is in the repository.
+     *
+     * [onResult] is called with `true` if the repository contains the name, `false` otherwise.
+     */
+    fun doesNotContainDrawing(
+        drawingName: String,
+        onResult: (String) -> Unit
+    ) {
+        scope.launch {
+            val nameTaken = dao.fileNameExists(drawingName) > 0
+            if (!nameTaken) {
+                onResult(drawingName)
             }
         }
     }

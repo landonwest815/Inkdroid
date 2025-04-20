@@ -1,7 +1,6 @@
 package com.example.drawingappall.views
 
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,8 +20,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
@@ -98,6 +95,7 @@ fun GalleryScreen(
                 IconButton(onClick =
                     {
                         localImages = !localImages
+                        vm.fetchFiles()
                         //Log.d("localImages", "localImages $localImages")
                     }) {
                     Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "Toggle Images")
@@ -105,7 +103,7 @@ fun GalleryScreen(
             }
 
             // Observe and display list of drawings
-            val list by if (localImages) vm.drawings.collectAsState(emptyList()) else vm.uploadedDrawings.collectAsState(emptyList())
+            val list by if (localImages) vm.drawings.collectAsState(emptyList()) else vm.serverDrawings.collectAsState(emptyList())
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -156,23 +154,22 @@ fun DrawingFileCard(
                         )
                     )
             ) {
-                // Conditionally render the buttons based on the localImages state
-                if (localImages) {
-                    // Delete icon for local images
-                    IconButton(
-                        onClick = { vm.deleteFile(file) },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(0.dp)
-                            .testTag("Delete_${file.fileName}")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Delete",
-                            tint = Color.Gray
-                        )
-                    }
+                // Delete icon
+                IconButton(
+                    onClick = { vm.deleteFile(file) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(0.dp)
+                        .testTag("Delete_${file.fileName}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Delete",
+                        tint = Color.Gray
+                    )
+                }
 
+                if (localImages) {
                     // Upload button for local images
                     IconButton(
                         onClick = { vm.uploadFile(file) },

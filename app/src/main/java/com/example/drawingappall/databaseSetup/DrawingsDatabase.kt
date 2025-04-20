@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Room database for storing drawing file metadata.
  */
-@Database(entities = [Drawing::class], version = 2, exportSchema = false)
+@Database(entities = [Drawing::class], version = 3, exportSchema = false)
 abstract class DrawingsDatabase : RoomDatabase() {
     abstract fun drawingsDao(): DrawingsDAO
 }
