@@ -29,6 +29,14 @@ uiTooling = "1.7.8"
 uiAndroid = "1.7.8"
 uiTestJunit4Android = "1.7.8"
 
+#ktor
+ktorClientAndroid = "2.3.8"
+ktorClientCio = "2.3.8"
+ktorClientContentNegotiation = "2.3.8"
+ktorClientCore = "2.3.8"
+ktorSerializationKotlinxJson = "2.3.8"
+kotlinxSerializationJson = "1.6.2"
+
 #room
 roomCommon = "2.6.1"
 roomKtx = "2.6.1"
@@ -70,6 +78,14 @@ androidx-ui-test-junit4-android = { group = "androidx.compose.ui", name = "ui-te
 androidx-room-common = { group = "androidx.room", name = "room-common", version.ref = "roomCommon" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
+
+#ktor
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktorClientCio" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiation" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

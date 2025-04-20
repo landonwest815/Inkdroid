@@ -35,4 +35,5 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jwt")
 
     implementation("at.favre.lib:bcrypt:0.10.2")
+    implementation("com.typesafe:config")
 }

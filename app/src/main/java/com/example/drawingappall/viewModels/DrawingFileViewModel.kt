@@ -3,6 +3,7 @@ package com.example.drawingappall.viewModels
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
 import androidx.lifecycle.viewmodel.initializer
@@ -13,6 +14,17 @@ import com.example.drawingappall.databaseSetup.DrawingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.call.receive
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 
 class DrawingFileViewModel(private val repository: DrawingsRepository, private val context : Context) : ViewModel() {
 
@@ -60,7 +72,28 @@ class DrawingFileViewModel(private val repository: DrawingsRepository, private v
 
     // Uploads the specified drawing file
     fun uploadFile(file: Drawing) {
-
+        val client = HttpClient(Android){
+            install(ContentNegotiation){
+                json(Json{
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                })
+            }
+        }
+        val scope = repository.scope
+        scope.launch {
+            try{
+                val response: HttpResponse = client.get("http://10.0.2.2:8080/api/hello")
+                if (response.status == HttpStatusCode.OK) {
+                    val responseData: String = response.body()
+                    println("Response from server: $responseData")
+                } else {
+                    println("Error: ${response.status}")
+                }
+            } catch(e: Exception){
+                Log.e("err", "${e.message}")
+            }
+        }
     }
 
     // Downloads the specified drawing file
