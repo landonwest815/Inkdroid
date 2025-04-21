@@ -11,19 +11,19 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 /**
- * Repository for managing drawing files and syncing with Room database.
- * Handles file I/O, persistence, and metadata via DAO.
+ * Repository for managing drawing files and their metadata using Room.
+ * Handles file I/O and database operations asynchronously via a coroutine scope.
  */
 class DrawingsRepository(
     val scope: CoroutineScope,
     private val dao: DrawingsDAO
 ) {
 
-    // Observes the list of drawing entries in the database
+    // A stream of all drawings in the database
     val drawings: Flow<List<Drawing>> = dao.getAllDrawings()
 
     /**
-     * Creates a new drawing entry in the database.
+     * Inserts a new drawing into the database.
      */
     fun createFile(file: Drawing) {
         scope.launch {
@@ -32,15 +32,14 @@ class DrawingsRepository(
     }
 
     /**
-     * Saves the given [bitmap] to the specified drawing file.
+     * Saves the given [bitmap] to the file specified in [drawing].
      */
-    fun saveDrawing(drawing : Drawing, bitmap: Bitmap)
-    {
+    fun saveDrawing(drawing: Drawing, bitmap: Bitmap) {
         saveDrawing(drawing.filePath, drawing.fileName, bitmap)
     }
 
     /**
-     * Saves the given [bitmap] to the specified [filePath] and [fileName].
+     * Saves the given [bitmap] to a file at [filePath] with name [fileName].
      */
     fun saveDrawing(filePath: String, fileName: String, bitmap: Bitmap) {
         val path = File(filePath, fileName).absolutePath
@@ -54,16 +53,16 @@ class DrawingsRepository(
     }
 
     /**
-     * Loads a drawing from disk.
-     * Returns null if the file doesn't exist (e.g., when creating a new drawing).
+     * Loads a drawing from disk using the given [drawing] metadata.
+     * Returns null if the file doesn't exist.
      */
-    fun loadDrawing(drawing : Drawing): Bitmap? {
-        return  loadDrawing(drawing.filePath, drawing.fileName)
+    fun loadDrawing(drawing: Drawing): Bitmap? {
+        return loadDrawing(drawing.filePath, drawing.fileName)
     }
 
     /**
-     * Loads a drawing from disk.
-     * Returns null if the file doesn't exist (e.g., when creating a new drawing).
+     * Loads a drawing from disk using the provided [filePath] and [fileName].
+     * Returns null if the file doesn't exist.
      */
     fun loadDrawing(filePath: String, fileName: String): Bitmap? {
         val file = File(filePath, fileName)
@@ -95,8 +94,7 @@ class DrawingsRepository(
 
     /**
      * Renames a drawing's file on disk and updates the database record.
-     *
-     * [onResult] is called with `true` if successful, `false` otherwise.
+     * Calls [onResult] with true if successful, false otherwise.
      */
     fun renameDrawing(
         filePath: String,
@@ -108,55 +106,46 @@ class DrawingsRepository(
         val newFile = File(filePath, newName)
 
         if (!oldFile.exists()) {
-            onResult(false) // File doesn't exist
+            onResult(false)
             return
         }
 
         scope.launch {
             val nameTaken = dao.fileNameExists(newName) > 0
             if (nameTaken) {
-                onResult(false) // New name is already in use
+                onResult(false)
                 return@launch
             }
 
             val renamed = oldFile.renameTo(newFile)
             if (renamed) {
-                val oldDrawing = dao.getDrawingByName(oldName)
-                if (oldDrawing != null) {
-                    val updatedDrawing = Drawing(newName, filePath, oldDrawing.storageLocation).apply {
-                        id = oldDrawing.id
-                    }
-                    dao.deleteDrawing(oldDrawing)
-                    dao.createDrawing(updatedDrawing)
+                val drawing = dao.getDrawingByName(oldName)
+                if (drawing != null) {
+                    val updated = drawing.copy(fileName = newName)
+                    dao.updateDrawing(updated)
+                    onResult(true)
+                } else {
+                    onResult(false)
                 }
-                onResult(true)
             } else {
-                onResult(false) // File rename failed
+                onResult(false)
             }
         }
     }
 
     /**
-     * Changes a drawings storage location
+     * Updates the [drawing]'s storage location in the database.
      */
-    fun changeStorageLocation(
-        drawing : Drawing,
-        storageLocation: StorageLocation
-    ) {
+    fun changeStorageLocation(drawing: Drawing, storageLocation: StorageLocation) {
         scope.launch {
-            val updatedDrawing = Drawing(drawing.fileName, drawing.filePath, storageLocation).apply {
-                id = drawing.id
-            }
-
-            dao.deleteDrawing(drawing)
-            dao.createDrawing(updatedDrawing)
+            val updatedDrawing = drawing.copy(storageLocation = storageLocation)
+            dao.updateDrawing(updatedDrawing)
         }
     }
 
     /**
-     * Checks if a name is in the repository.
-     *
-     * [onResult] is called with `true` if the repository contains the name, `false` otherwise.
+     * Checks if a drawing with the given name does NOT exist in the database.
+     * If it doesn't exist, [onResult] is called with the name.
      */
     fun doesNotContainDrawing(
         drawingName: String,

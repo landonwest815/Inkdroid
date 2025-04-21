@@ -1,45 +1,41 @@
 package com.example.drawingappall.viewModels
 
-
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.drawingappall.accounts.TokenStore
 import com.example.drawingappall.databaseSetup.AllApplication
 import com.example.drawingappall.databaseSetup.Drawing
 import com.example.drawingappall.databaseSetup.DrawingsRepository
 import com.example.drawingappall.databaseSetup.StorageLocation
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.engine.android.Android
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.forms.formData
-import io.ktor.client.request.forms.submitFormWithBinaryData
-import io.ktor.client.request.get
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.readBytes
-import io.ktor.http.Headers
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.json.Json
-import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.flow.stateIn
 
-class DrawingFileViewModel(private val repository: DrawingsRepository, private val context : Context) : ViewModel() {
+/**
+ * ViewModel for managing drawing files and syncing local vs. server-based entries.
+ */
+class DrawingFileViewModel(
+    private val repository: DrawingsRepository,
+    private val context: Context
+) : ViewModel() {
 
-    // Creates a new file and saves an empty bitmap into it
+    /**
+     * Creates a new drawing file with an empty 800x800 bitmap and stores it locally.
+     * @return the [Drawing] entry that was created.
+     */
     fun createFile(name: String): Drawing {
         val filePath = context.filesDir.absolutePath
-        val file = Drawing(name, filePath)
+        val file = Drawing(
+            fileName = name,
+            filePath = filePath,
+            storageLocation = StorageLocation.Local,
+            ownerUsername = TokenStore.username
+        )
 
         repository.createFile(file)
 
@@ -49,12 +45,17 @@ class DrawingFileViewModel(private val repository: DrawingsRepository, private v
         return file
     }
 
-    // Deletes the specified drawing file
+    /**
+     * Deletes the specified [file] from both disk and database.
+     */
     fun deleteFile(file: Drawing) {
         repository.deleteDrawing(file)
     }
 
-    // Renames a drawing file and passes result (success/failure) to callback
+    /**
+     * Attempts to rename the given file and update its database record.
+     * @param onResult Callback with `true` if successful, `false` otherwise.
+     */
     fun renameDrawing(
         filePath: String,
         oldName: String,
@@ -64,13 +65,16 @@ class DrawingFileViewModel(private val repository: DrawingsRepository, private v
         repository.renameDrawing(filePath, oldName, newName, onResult)
     }
 
-    // Observe the list of drawings as a StateFlow
+    /**
+     * Flow of local drawings owned by the currently logged-in user.
+     */
     val drawings: StateFlow<List<Drawing>> = repository.drawings
         .map { allDrawings ->
-            val filtered = allDrawings.filter { it.storageLocation == StorageLocation.Local
-                    || it.storageLocation == StorageLocation.Both }
-            println("Filtered drawings: ${filtered.map { it.storageLocation }}")
-            filtered
+            val currentUser = TokenStore.username
+            allDrawings.filter {
+                (it.storageLocation == StorageLocation.Local || it.storageLocation == StorageLocation.Both) &&
+                        it.ownerUsername == currentUser
+            }
         }
         .stateIn(
             scope = repository.scope,
@@ -78,30 +82,33 @@ class DrawingFileViewModel(private val repository: DrawingsRepository, private v
             initialValue = emptyList()
         )
 
-
-    // Observe the list of server drawings as a StateFlow
+    /**
+     * Flow of drawings stored on the server (or both server and local).
+     */
     val serverDrawings: StateFlow<List<Drawing>> = repository.drawings
-        // Sort by StorageLocation
         .map { allDrawings ->
-            allDrawings.filter { it.storageLocation == StorageLocation.Server ||
-                    it.storageLocation == StorageLocation.Both }
+            allDrawings.filter {
+                it.storageLocation == StorageLocation.Server || it.storageLocation == StorageLocation.Both
+            }
         }
         .stateIn(
             scope = repository.scope,
             started = SharingStarted.WhileSubscribed(),
             initialValue = emptyList()
         )
-
 }
 
+/**
+ * Provides a factory for instantiating [DrawingFileViewModel] with application dependencies.
+ */
 object DrawingViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
             val application = this[AndroidViewModelFactory.APPLICATION_KEY] as AllApplication
-            val drawingsRepository = application.drawingsRepository
-            val context = application.applicationContext
-
-            DrawingFileViewModel(drawingsRepository, context)
+            DrawingFileViewModel(
+                application.drawingsRepository,
+                application.applicationContext
+            )
         }
     }
 }

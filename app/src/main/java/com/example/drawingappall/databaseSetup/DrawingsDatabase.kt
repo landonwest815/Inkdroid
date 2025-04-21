@@ -1,44 +1,57 @@
 package com.example.drawingappall.databaseSetup
 
-import androidx.room.Dao
-import androidx.room.Database
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.RoomDatabase
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Room database for storing drawing file metadata.
+ * Room database class that holds the drawing files table.
  */
-@Database(entities = [Drawing::class], version = 3, exportSchema = false)
+@Database(entities = [Drawing::class], version = 5, exportSchema = false)
 abstract class DrawingsDatabase : RoomDatabase() {
     abstract fun drawingsDao(): DrawingsDAO
 }
 
 /**
- * Data Access Object for performing operations on drawing files.
+ * Data Access Object for performing CRUD operations on Drawing entities.
  */
 @Dao
 interface DrawingsDAO {
 
-    // Inserts a new drawing file entry
+    /**
+     * Inserts a new drawing into the database.
+     */
     @Insert
     suspend fun createDrawing(data: Drawing)
 
-    // Deletes an existing drawing file entry
+    /**
+     * Deletes a drawing from the database.
+     */
     @Delete
     suspend fun deleteDrawing(data: Drawing)
 
-    // Returns a flow of all drawing file entries
+    /**
+     * Returns a stream of all drawings in the database.
+     */
     @Query("SELECT * FROM drawing_files")
     fun getAllDrawings(): Flow<List<Drawing>>
 
-    // Fetches a drawing by its filename
+    /**
+     * Retrieves a drawing by its file name.
+     * @return the matching Drawing or null if not found.
+     */
     @Query("SELECT * FROM drawing_files WHERE fileName = :fileName LIMIT 1")
     suspend fun getDrawingByName(fileName: String): Drawing?
 
-    // Checks if a file with the given name exists
+    /**
+     * Checks if a drawing with the given file name exists.
+     * @return number of matches (0 or 1 expected).
+     */
     @Query("SELECT COUNT(*) FROM drawing_files WHERE fileName = :fileName")
     suspend fun fileNameExists(fileName: String): Int
+
+    /**
+     * Updates an existing drawing entry.
+     */
+    @Update
+    suspend fun updateDrawing(drawing: Drawing)
 }

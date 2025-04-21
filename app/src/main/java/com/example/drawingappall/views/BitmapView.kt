@@ -9,35 +9,31 @@ import android.util.AttributeSet
 import android.view.View
 
 /**
- * A custom View that displays a given Bitmap.
- * You can update the image dynamically using setBitmap().
+ * A custom View for rendering a provided [Bitmap] to fill the entire view bounds.
+ * Use [setBitmap] to update the image dynamically.
  */
 class BitmapView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
 
-    // Paint used for rendering the bitmap
     private val paint = Paint()
-
-    // The bitmap to display
     private var bitmap: Bitmap? = null
 
-    // Rect defining the area to draw the bitmap (entire view bounds)
+    // Defines the drawing bounds (lazy to ensure width/height are available)
     private val rect: Rect by lazy {
         Rect(0, 0, width, height)
     }
 
-    // Called automatically when the view needs to be drawn
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
-        // If a bitmap is set, draw it to fill the entire view
         bitmap?.let {
             canvas.drawBitmap(it, null, rect, paint)
         }
     }
 
-    // Public method to update the displayed bitmap
+    /**
+     * Sets a new bitmap to be displayed and triggers a redraw.
+     */
     fun setBitmap(bitmap: Bitmap) {
         this.bitmap = bitmap
-        invalidate() // Request a redraw so onDraw() is called again
+        invalidate()
     }
 }

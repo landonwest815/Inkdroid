@@ -4,32 +4,13 @@ import android.net.Uri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Card
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
@@ -38,99 +19,114 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.drawingappall.accounts.TokenStore
 import com.example.drawingappall.databaseSetup.Drawing
-import com.example.drawingappall.viewModels.DrawingFileViewModel
-import com.example.drawingappall.viewModels.DrawingViewModelProvider
-import com.example.drawingappall.viewModels.SocialViewModel
-import com.example.drawingappall.viewModels.SocialViewModelProvider
+import com.example.drawingappall.viewModels.*
+
 import java.io.File
 
-
+/**
+ * Displays the gallery of either local or server-based drawings.
+ */
 @Composable
 fun GalleryScreen(
     dvm: DrawingFileViewModel = viewModel(factory = DrawingViewModelProvider.Factory),
-    svm: SocialViewModel = viewModel(factory = SocialViewModelProvider .Factory),
+    svm: SocialViewModel = viewModel(factory = SocialViewModelProvider.Factory),
     navController: NavController
 ) {
-    var localImages by remember { mutableStateOf<Boolean>(true) } // Toggle between "My Images" and "Uploaded Images"
+    var localImages by remember { mutableStateOf(true) }
 
     Scaffold(
-        // Floating action button to add a new drawing
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
                     val drawing = dvm.createFile("Drawing_${System.currentTimeMillis()}")
                     val encodedFilePath = Uri.encode(drawing.filePath)
-                    navController.navigate("draw/${encodedFilePath}/${drawing.fileName}")
+                    navController.navigate("draw/$encodedFilePath/${drawing.fileName}")
                 }
             ) {
                 Icon(Icons.Default.Add, contentDescription = "New Drawing")
             }
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFEEEEEE))
-                .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // Header with toggle
-            Row(
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, start = 8.dp),
+                contentAlignment = Alignment.TopStart
             ) {
-                Text(
-                    text = if (localImages) "My Drawings" else "Uploaded Images",
-                    color = Color.Black,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                // Toggle Button
-                IconButton(onClick = {
-                    localImages = !localImages
-                    svm.fetchFiles()
-                }) {
-                    Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "Toggle Images")
-                }
-
-                // Logout Button
-                IconButton(onClick = {
-                    svm.logout()
-                    navController.navigate("splash") {
-                        popUpTo("gallery") { inclusive = true }
+                TextButton(
+                    onClick = {
+                        svm.logout()
+                        navController.navigate("splash") {
+                            popUpTo("gallery") { inclusive = true }
+                        }
                     }
-                }) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Logout", tint = Color.Red)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ExitToApp,
+                        contentDescription = null,
+                        tint = Color.Red
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Log Out", color = Color.Red)
                 }
             }
 
-            // Observe and display list of drawings
-            val list by if (localImages) dvm.drawings.collectAsState(emptyList()) else dvm.serverDrawings.collectAsState(emptyList())
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val tabs = listOf("My Drawings", "Uploaded")
+            val selectedTabIndex = if (localImages) 0 else 1
+
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.primary
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = {
+                            localImages = index == 0
+                            if (!localImages) svm.fetchFiles()
+                        },
+                        text = {
+                            Text(
+                                text = title,
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val list by if (localImages)
+                dvm.drawings.collectAsState(emptyList())
+            else
+                dvm.serverDrawings.collectAsState(emptyList())
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 for (file in list.asReversed()) {
                     item {
-                        DrawingFileCard(
-                            file,
-                            navController,
-                            dvm,
-                            svm,
-                            localImages
-                        )
+                        DrawingFileCard(file, navController, dvm, svm, localImages)
                     }
                 }
             }
@@ -138,6 +134,9 @@ fun GalleryScreen(
     }
 }
 
+/**
+ * A card displaying a single drawing, including action icons and metadata.
+ */
 @Composable
 fun DrawingFileCard(
     file: Drawing,
@@ -150,15 +149,13 @@ fun DrawingFileCard(
     var isDownloaded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
-        Card(
-            modifier = Modifier.aspectRatio(1f) // enforce square aspect ratio
-        ) {
+        Card(modifier = Modifier.aspectRatio(1f)) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable {
                         val encodedFilePath = Uri.encode(file.filePath)
-                        navController.navigate("draw/${encodedFilePath}/${file.fileName}")
+                        navController.navigate("draw/$encodedFilePath/${file.fileName}")
                     }
                     .testTag("DrawingCard_${file.fileName}")
                     .paint(
@@ -167,23 +164,26 @@ fun DrawingFileCard(
                         )
                     )
             ) {
-                // Delete icon
-                IconButton(
-                    onClick = { dvm.deleteFile(file) },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(0.dp)
-                        .testTag("Delete_${file.fileName}")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Delete",
-                        tint = Color.Gray
-                    )
+                val currentUser = TokenStore.username
+
+                if (localImages || file.ownerUsername == currentUser) {
+                    IconButton(
+                        onClick = { dvm.deleteFile(file) },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(0.dp)
+                            .testTag("Delete_${file.fileName}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Delete",
+                            tint = Color.Gray
+                        )
+                    }
                 }
 
+
                 if (localImages) {
-                    // Upload button for local images
                     IconButton(
                         onClick = { svm.uploadFile(file) },
                         modifier = Modifier
@@ -191,19 +191,14 @@ fun DrawingFileCard(
                             .padding(0.dp)
                             .testTag("UploadButton_${file.fileName}")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Upload"
-                        )
+                        Icon(Icons.Default.Share, contentDescription = "Upload")
                     }
                 } else {
-                    // Download button for non-local images
                     IconButton(
-                        onClick =
-                            {
-                                svm.downloadFile(file.toString())
-                                isDownloaded = true // can implement !isDownloaded and un-downloading a file
-                            },
+                        onClick = {
+                            svm.downloadFile(file.toString())
+                            isDownloaded = true
+                        },
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(0.dp)
@@ -218,7 +213,6 @@ fun DrawingFileCard(
             }
         }
 
-        // Filename displayed under the card
         Text(
             text = file.fileName,
             color = Color.Gray,
@@ -228,5 +222,16 @@ fun DrawingFileCard(
                 .padding(top = 8.dp)
                 .testTag("FileName_${file.fileName}")
         )
+
+        if (!localImages) {
+            file.ownerUsername?.let {
+                Text(
+                    text = "By $it",
+                    color = Color.DarkGray,
+                    fontSize = 12.sp,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        }
     }
 }

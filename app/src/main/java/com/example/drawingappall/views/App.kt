@@ -11,39 +11,37 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
+/**
+ * Root composable that sets up navigation and top-level layout.
+ */
 @Composable
 fun App() {
-    // allows us to switch between the multiple screens
     val navController = rememberNavController()
 
     Box(
         modifier = Modifier
-            .background(Color(0xFFEEEEEE)) // gray background
+            .background(Color(0xFFEEEEEE)) // light gray background
     ) {
-        // holds the screens and does android stuff behind the scenes
         Scaffold(
             containerColor = Color.Transparent
         ) { paddingValues ->
 
-            // NavHost manages which screen is currently visible
             NavHost(
                 navController = navController,
-                startDestination = "splash", // start at the splash screen
+                startDestination = "splash",
                 modifier = Modifier.padding(paddingValues)
             ) {
 
-                // Splash screen route
                 composable("splash") {
                     SplashScreen(
                         onNavigateToGallery = {
                             navController.navigate("gallery") {
-                                popUpTo("splash") { inclusive = true } // adjust if needed
+                                popUpTo("splash") { inclusive = true }
                             }
                         }
                     )
                 }
 
-                // Drawing screen route, with dynamic filepath and filename
                 composable("draw/{filepath}/{filename}") { backStackEntry ->
                     val filePath = backStackEntry.arguments?.getString("filepath").orEmpty()
                     val fileName = backStackEntry.arguments?.getString("filename").orEmpty()
@@ -55,7 +53,6 @@ fun App() {
                     )
                 }
 
-                // Gallery screen route
                 composable("gallery") {
                     GalleryScreen(navController = navController)
                 }

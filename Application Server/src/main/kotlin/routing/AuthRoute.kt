@@ -1,6 +1,8 @@
 package com.application_server.routing
 
 import at.favre.lib.crypto.bcrypt.BCrypt
+import com.all.auth.JwtConfig
+import com.all.persistence.UserStore
 import com.application_server.model.User
 import com.application_server.routing.request.LoginRequest
 import com.application_server.routing.response.UserResponse
@@ -17,46 +19,26 @@ import java.util.UUID
 
 fun Route.authRoute(jwtService: JwtService, userService: UserService) {
 
-  post("/login") {
-    val loginRequest = call.receive<LoginRequest>()
+  post("/register") {
+    val request = call.receive<UserRequest>()
+    val success = UserStore.register(request.username, request.password)
 
-    val token: String? = jwtService.createJwtToken(loginRequest)
-
-    token?.let {
-      call.respond(hashMapOf("token" to token))
-    } ?: call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+    if (success) {
+      call.respond(HttpStatusCode.Created)
+    } else {
+      call.respond(HttpStatusCode.Conflict, "User already exists")
+    }
   }
 
-  post("/register") {
-    println("✅ HIT /api/auth/register")
+  post("/login") {
+    val request = call.receive<LoginRequest>()
+    val isValid = UserStore.validate(request.username, request.password)
 
-    try {
-      // STEP 2: log raw body
-      val raw = call.receiveText()
-     // println("🔍 Raw body: $raw")
-
-      // manually decode JSON string to UserRequest
-      val request = Json.decodeFromString<UserRequest>(raw)
-      //println("Parsed request: ${request.username}")
-
-      val hashedPassword = BCrypt.withDefaults().hashToString(12, request.password.toCharArray())
-      val newUser = User(
-        id = UUID.randomUUID(),
-        username = request.username,
-        hashedPassword = hashedPassword
-      )
-
-      val saved = userService.save(newUser)
-      println("Saved user: ${saved != null}")
-
-      if (saved != null) {
-        call.respond(HttpStatusCode.Created)
-      } else {
-        call.respond(HttpStatusCode.Conflict, "Username already exists")
-      }
-    } catch (e: Exception) {
-      println("❌ Exception while handling /register: ${e.message}")
-      call.respond(HttpStatusCode.BadRequest, "Malformed request")
+    if (isValid) {
+      val token = JwtConfig.generateToken(request.username)
+      call.respond(mapOf("token" to token))
+    } else {
+      call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
     }
   }
 }

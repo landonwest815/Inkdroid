@@ -25,6 +25,9 @@ import com.example.drawingappall.viewModels.SocialViewModelProvider
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+/**
+ * Splash screen handling user login/registration before navigating to the gallery.
+ */
 @Composable
 fun SplashScreen(
     onNavigateToGallery: () -> Unit,
@@ -37,7 +40,7 @@ fun SplashScreen(
     var isLoginMode by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
 
-    // 👇 Auto-navigate when authenticated becomes true
+    // Automatically navigates to gallery when login or registration succeeds
     LaunchedEffect(Unit) {
         snapshotFlow { isAuthenticated }
             .collectLatest { authenticated ->
@@ -53,14 +56,12 @@ fun SplashScreen(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-            // Paint icon
             Image(
                 painter = painterResource(id = R.drawable.painticon),
                 contentDescription = "Paint Icon",
                 modifier = Modifier.size(100.dp)
             )
 
-            // App name
             Text(
                 text = "drawALL",
                 style = MaterialTheme.typography.headlineMedium,
@@ -73,7 +74,6 @@ fun SplashScreen(
                     .padding(bottom = 16.dp)
             )
 
-            // Author credits
             Text(
                 text = "Andy Chadwick\nLandon Evans\nLandon West",
                 style = MaterialTheme.typography.headlineMedium,
@@ -87,8 +87,8 @@ fun SplashScreen(
                     .padding(bottom = 16.dp)
             )
 
-            // --- Auth Section ---
             Spacer(modifier = Modifier.height(24.dp))
+
             Text(
                 text = if (isLoginMode) "Log In" else "Register",
                 style = MaterialTheme.typography.titleMedium
@@ -124,7 +124,7 @@ fun SplashScreen(
                         if (isLoginMode) {
                             viewModel.login(username, password)
                         } else {
-                            viewModel.register(username, password) // ✅ auto-logs in on success
+                            viewModel.register(username, password)
                         }
                     }
                 },
@@ -134,7 +134,12 @@ fun SplashScreen(
             }
 
             TextButton(onClick = { isLoginMode = !isLoginMode }) {
-                Text(if (isLoginMode) "Need an account? Register" else "Have an account? Log in")
+                Text(
+                    if (isLoginMode)
+                        "Need an account? Register"
+                    else
+                        "Have an account? Log in"
+                )
             }
 
             error?.let {
@@ -148,7 +153,5 @@ fun SplashScreen(
 @Preview(showBackground = true)
 @Composable
 fun SplashScreenPreview() {
-    SplashScreen(
-        onNavigateToGallery = {}
-    )
+    SplashScreen(onNavigateToGallery = {})
 }

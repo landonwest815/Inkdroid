@@ -14,6 +14,10 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 
+/**
+ * Handles user authentication API calls using Ktor HTTP client.
+ * Provides methods for registration and login.
+ */
 object UserApi {
 
     private val client = HttpClient(OkHttp) {
@@ -27,6 +31,10 @@ object UserApi {
 
     private const val BASE_URL = "http://10.0.2.2:8080/api/auth"
 
+    /**
+     * Attempts to register a new user with the given credentials.
+     * @return true if registration was successful, false otherwise.
+     */
     suspend fun register(username: String, password: String): Boolean {
         val response = client.post("$BASE_URL/register") {
             contentType(ContentType.Application.Json)
@@ -36,15 +44,19 @@ object UserApi {
         return response.status == HttpStatusCode.Created
     }
 
+    /**
+     * Attempts to log in with the provided credentials.
+     * @return JWT token as a String if successful, or null otherwise.
+     */
     suspend fun login(username: String, password: String): String? {
         val response = client.post("$BASE_URL/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest(username, password))
         }
 
-        return (if (response.status == HttpStatusCode.OK) {
+        return if (response.status == HttpStatusCode.OK) {
             response.body<Map<String, String>>()["token"]
-        } else null).toString()
+        } else null
     }
 
     @Serializable
