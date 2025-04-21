@@ -46,12 +46,15 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.drawingappall.databaseSetup.Drawing
 import com.example.drawingappall.viewModels.DrawingFileViewModel
 import com.example.drawingappall.viewModels.DrawingViewModelProvider
+import com.example.drawingappall.viewModels.SocialViewModel
+import com.example.drawingappall.viewModels.SocialViewModelProvider
 import java.io.File
 
 
 @Composable
 fun GalleryScreen(
-    vm: DrawingFileViewModel = viewModel(factory = DrawingViewModelProvider.Factory),
+    dvm: DrawingFileViewModel = viewModel(factory = DrawingViewModelProvider.Factory),
+    svm: SocialViewModel = viewModel(factory = SocialViewModelProvider .Factory),
     navController: NavController
 ) {
     var localImages by remember { mutableStateOf<Boolean>(true) } // Toggle between "My Images" and "Uploaded Images"
@@ -61,7 +64,7 @@ fun GalleryScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val drawing = vm.createFile("Drawing_${System.currentTimeMillis()}")
+                    val drawing = dvm.createFile("Drawing_${System.currentTimeMillis()}")
                     val encodedFilePath = Uri.encode(drawing.filePath)
                     navController.navigate("draw/${encodedFilePath}/${drawing.fileName}")
                 }
@@ -92,18 +95,26 @@ fun GalleryScreen(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 // Toggle Button
-                IconButton(onClick =
-                    {
-                        localImages = !localImages
-                        vm.fetchFiles()
-                        //Log.d("localImages", "localImages $localImages")
-                    }) {
+                IconButton(onClick = {
+                    localImages = !localImages
+                    svm.fetchFiles()
+                }) {
                     Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "Toggle Images")
+                }
+
+                // Logout Button
+                IconButton(onClick = {
+                    svm.logout()
+                    navController.navigate("splash") {
+                        popUpTo("gallery") { inclusive = true }
+                    }
+                }) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Logout", tint = Color.Red)
                 }
             }
 
             // Observe and display list of drawings
-            val list by if (localImages) vm.drawings.collectAsState(emptyList()) else vm.serverDrawings.collectAsState(emptyList())
+            val list by if (localImages) dvm.drawings.collectAsState(emptyList()) else dvm.serverDrawings.collectAsState(emptyList())
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -116,7 +127,8 @@ fun GalleryScreen(
                         DrawingFileCard(
                             file,
                             navController,
-                            vm,
+                            dvm,
+                            svm,
                             localImages
                         )
                     }
@@ -130,7 +142,8 @@ fun GalleryScreen(
 fun DrawingFileCard(
     file: Drawing,
     navController: NavController,
-    vm: DrawingFileViewModel,
+    dvm: DrawingFileViewModel,
+    svm: SocialViewModel,
     localImages: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -156,7 +169,7 @@ fun DrawingFileCard(
             ) {
                 // Delete icon
                 IconButton(
-                    onClick = { vm.deleteFile(file) },
+                    onClick = { dvm.deleteFile(file) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(0.dp)
@@ -172,7 +185,7 @@ fun DrawingFileCard(
                 if (localImages) {
                     // Upload button for local images
                     IconButton(
-                        onClick = { vm.uploadFile(file) },
+                        onClick = { svm.uploadFile(file) },
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(0.dp)
@@ -188,7 +201,7 @@ fun DrawingFileCard(
                     IconButton(
                         onClick =
                             {
-                                vm.downloadFile(file)
+                                svm.downloadFile(file.toString())
                                 isDownloaded = true // can implement !isDownloaded and un-downloading a file
                             },
                         modifier = Modifier

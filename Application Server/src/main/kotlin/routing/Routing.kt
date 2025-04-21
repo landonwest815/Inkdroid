@@ -18,8 +18,13 @@ fun Application.configureRouting(
 ) {
   routing {
 
+    get("/ping") {
+      println("Ping hit!")
+      call.respondText("pong")
+    }
+
     route("/api/auth") {
-      authRoute(jwtService)
+      authRoute(jwtService, userService)
     }
 
     route("/api/user") {

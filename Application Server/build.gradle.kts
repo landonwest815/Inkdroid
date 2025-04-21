@@ -4,6 +4,8 @@ val logback_version: String by project
 plugins {
     kotlin("jvm") version "2.1.10"
     id("io.ktor.plugin") version "3.1.2"
+    kotlin("plugin.serialization") version "1.9.0"
+    id("application")
 }
 
 group = "com.all"
@@ -36,4 +38,6 @@ dependencies {
 
     implementation("at.favre.lib:bcrypt:0.10.2")
     implementation("com.typesafe:config")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // ✅ required for Json decoding
 }

@@ -22,6 +22,9 @@ class UserService(
   fun save(user: User): User? {
     val foundUser = userRepository.findByUsername(user.username)
 
+    println("Saving user: ${user.username}")
+    println("Found existing: $foundUser")
+
     return if (foundUser == null) {
       userRepository.save(user)
       user

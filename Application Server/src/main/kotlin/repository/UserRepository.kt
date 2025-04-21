@@ -13,9 +13,14 @@ class UserRepository {
   fun findById(id: UUID): User? =
     users.firstOrNull { it.id == id }
 
-  fun findByUsername(username: String): User? =
-    users.firstOrNull { it.username == username }
+  fun findByUsername(username: String): User? {
+    //println("Looking for user: $username")
+    //println("Current users: ${users.map { it.username }}")
+    return users.firstOrNull { it.username == username }
+  }
 
-  fun save(user: User): Boolean =
-    users.add(user)
+  fun save(user: User): Boolean {
+    //println("Saving user to in-memory list: ${user.username}")
+    return users.add(user)
+  }
 }

@@ -34,8 +34,13 @@ fun App() {
 
                 // Splash screen route
                 composable("splash") {
-                    // On finish, navigate to gallery screen
-                    SplashScreen { navController.navigate("gallery") }
+                    SplashScreen(
+                        onNavigateToGallery = {
+                            navController.navigate("gallery") {
+                                popUpTo("splash") { inclusive = true } // adjust if needed
+                            }
+                        }
+                    )
                 }
 
                 // Drawing screen route, with dynamic filepath and filename

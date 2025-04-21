@@ -2,27 +2,49 @@ package com.example.drawingappall.views
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.drawingappall.R
+import com.example.drawingappall.viewModels.SocialViewModel
+import com.example.drawingappall.viewModels.SocialViewModelProvider
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
-fun SplashScreen(onNavigateToGallery: () -> Unit) {
+fun SplashScreen(
+    onNavigateToGallery: () -> Unit,
+    viewModel: SocialViewModel = viewModel(factory = SocialViewModelProvider.Factory)
+) {
+    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
+    val error by viewModel.authError.collectAsState()
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isLoginMode by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
+    // 👇 Auto-navigate when authenticated becomes true
+    LaunchedEffect(Unit) {
+        snapshotFlow { isAuthenticated }
+            .collectLatest { authenticated ->
+                if (authenticated) onNavigateToGallery()
+            }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -31,14 +53,14 @@ fun SplashScreen(onNavigateToGallery: () -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-            // Paint icon at the top
+            // Paint icon
             Image(
                 painter = painterResource(id = R.drawable.painticon),
                 contentDescription = "Paint Icon",
                 modifier = Modifier.size(100.dp)
             )
 
-            // App name/title
+            // App name
             Text(
                 text = "drawALL",
                 style = MaterialTheme.typography.headlineMedium,
@@ -51,7 +73,7 @@ fun SplashScreen(onNavigateToGallery: () -> Unit) {
                     .padding(bottom = 16.dp)
             )
 
-            // Authors list
+            // Author credits
             Text(
                 text = "Andy Chadwick\nLandon Evans\nLandon West",
                 style = MaterialTheme.typography.headlineMedium,
@@ -62,33 +84,63 @@ fun SplashScreen(onNavigateToGallery: () -> Unit) {
                 lineHeight = 24.sp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 4.dp)
+                    .padding(bottom = 16.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // --- Auth Section ---
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = if (isLoginMode) "Log In" else "Register",
+                style = MaterialTheme.typography.titleMedium
+            )
 
-            // Navigate to gallery screen
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Button(
-                onClick = onNavigateToGallery,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp) // tighter padding
+                onClick = {
+                    scope.launch {
+                        if (isLoginMode) {
+                            viewModel.login(username, password)
+                        } else {
+                            viewModel.register(username, password) // ✅ auto-logs in on success
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(0.8f)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Let's Draw",
-                        color = Color.Black,
-                        modifier = Modifier.padding(start = 12.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp)) // reduce gap
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Arrow Right",
-                        tint = Color.Black,
-                        modifier = Modifier.size(18.dp) // optional: shrink icon if needed
-                    )
-                }
+                Text(if (isLoginMode) "Log In" else "Register")
             }
 
+            TextButton(onClick = { isLoginMode = !isLoginMode }) {
+                Text(if (isLoginMode) "Need an account? Register" else "Have an account? Log in")
+            }
+
+            error?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
         }
     }
 }
