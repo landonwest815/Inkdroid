@@ -26,7 +26,7 @@ class DrawingViewTests {
 
         val drawing = Drawing(
             fileName = "drawing",
-            filePath
+            filePath = filePath
         )
 
         try {
@@ -49,7 +49,7 @@ class DrawingViewTests {
 
         val drawing = Drawing(
             fileName = "drawing",
-            filePath
+            filePath = filePath
         )
 
         try {
@@ -74,7 +74,7 @@ class DrawingViewTests {
 
         val drawing = Drawing(
             fileName = "drawing",
-            filePath
+            filePath = filePath
         )
 
         try {

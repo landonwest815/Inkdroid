@@ -26,8 +26,7 @@ Java_com_example_drawingappall_jni_ImageModification_blur(JNIEnv *env, jobject t
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_drawingappall_jni_ImageModification_sharpen(JNIEnv *env, jobject thiz, jobject bitmap) {
-    // TODO: implement sharpen()
-    LOGI("naa");
+    LOGI("Sharpening");
     Mat src;
     Mat blurred;
     bitmapToMat(env, bitmap, src, false);
