@@ -15,99 +15,117 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import java.io.File
 
 /**
- * ViewModel for managing drawing files and syncing local vs. server-based entries.
+ * ViewModel for managing drawing files: creation, deletion, renaming,
+ * and exposing local vs. server-based drawing flows.
  */
 class DrawingFileViewModel(
     private val repository: DrawingsRepository,
     private val context: Context
 ) : ViewModel() {
 
+    // -------- Flows --------
+
+    /** Only show drawings that live on disk (or were downloaded) AND belong to me */
+    val localDrawings = repository.allDrawings
+        .map { list ->
+            val user = TokenStore.username
+            list.filter { drawing ->
+                // must be marked Local or Both
+                (drawing.storageLocation == StorageLocation.Local
+                        || drawing.storageLocation == StorageLocation.Both)
+                        // must be mine
+                        && drawing.ownerUsername == user
+                        // **and** must actually exist on disk
+                        && File(drawing.filePath, drawing.fileName).exists()
+            }
+        }
+        .stateIn(
+            scope = repository.scope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = emptyList()
+        )
+
+    // serverDrawings remains unchanged…
+    val serverDrawings = repository.allDrawings
+        .map { list ->
+            list.filter {
+                it.storageLocation == StorageLocation.Server
+                        || it.storageLocation == StorageLocation.Both
+            }
+        }
+        .stateIn(
+            scope = repository.scope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = emptyList()
+        )
+
+    // -------- File Operations --------
+
     /**
-     * Creates a new drawing file with an empty 800x800 bitmap and stores it locally.
-     * @return the [Drawing] entry that was created.
+     * Creates and saves a new blank drawing (800x800 PNG).
+     * @param name filename to assign.
+     * @return Drawing metadata for the new file.
      */
     fun createFile(name: String): Drawing {
-        val filePath = context.filesDir.absolutePath
-        val file = Drawing(
+        val dir = context.filesDir.absolutePath
+        val drawing = Drawing(
             fileName = name,
-            filePath = filePath,
+            filePath = dir,
             storageLocation = StorageLocation.Local,
             ownerUsername = TokenStore.username
         )
+        repository.create(drawing)
 
-        repository.createFile(file)
+        // Initialize blank image
+        val bitmap = Bitmap.createBitmap(800, 800, Bitmap.Config.ARGB_8888)
+        repository.saveToDisk(dir, name, bitmap)
 
-        val emptyBitmap = Bitmap.createBitmap(800, 800, Bitmap.Config.ARGB_8888)
-        repository.saveDrawing(filePath, name, emptyBitmap)
+        return drawing
+    }
 
-        return file
+    /** Deletes the drawing from both disk and database. */
+    fun deleteFile(drawing: Drawing) {
+        val diskFile = File(drawing.filePath, drawing.fileName)
+        if (drawing.storageLocation == StorageLocation.Both) {
+            // user is simply removing their local copy
+            if (diskFile.exists()) diskFile.delete()
+            repository.updateLocation(drawing, StorageLocation.Server)
+        } else {
+            // truly-local file → delete DB + disk
+            repository.delete(drawing)
+        }
     }
 
     /**
-     * Deletes the specified [file] from both disk and database.
+     * Renames a drawing file and updates its database entry.
+     * @param filePath directory of the drawing.
+     * @param oldName current filename.
+     * @param newName desired filename.
+     * @param onResult callback invoked with success status.
      */
-    fun deleteFile(file: Drawing) {
-        repository.deleteDrawing(file)
-    }
-
-    /**
-     * Attempts to rename the given file and update its database record.
-     * @param onResult Callback with `true` if successful, `false` otherwise.
-     */
-    fun renameDrawing(
+    fun renameFile(
         filePath: String,
         oldName: String,
         newName: String,
         onResult: (Boolean) -> Unit
     ) {
-        repository.renameDrawing(filePath, oldName, newName, onResult)
+        repository.rename(filePath, oldName, newName, onResult)
     }
-
-    /**
-     * Flow of local drawings owned by the currently logged-in user.
-     */
-    val drawings: StateFlow<List<Drawing>> = repository.drawings
-        .map { allDrawings ->
-            val currentUser = TokenStore.username
-            allDrawings.filter {
-                (it.storageLocation == StorageLocation.Local || it.storageLocation == StorageLocation.Both) &&
-                        it.ownerUsername == currentUser
-            }
-        }
-        .stateIn(
-            scope = repository.scope,
-            started = SharingStarted.WhileSubscribed(),
-            initialValue = emptyList()
-        )
-
-    /**
-     * Flow of drawings stored on the server (or both server and local).
-     */
-    val serverDrawings: StateFlow<List<Drawing>> = repository.drawings
-        .map { allDrawings ->
-            allDrawings.filter {
-                it.storageLocation == StorageLocation.Server || it.storageLocation == StorageLocation.Both
-            }
-        }
-        .stateIn(
-            scope = repository.scope,
-            started = SharingStarted.WhileSubscribed(),
-            initialValue = emptyList()
-        )
 }
 
 /**
- * Provides a factory for instantiating [DrawingFileViewModel] with application dependencies.
+ * Factory for creating [DrawingFileViewModel] instances.
  */
 object DrawingViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
-            val application = this[AndroidViewModelFactory.APPLICATION_KEY] as AllApplication
+            val app = this[AndroidViewModelFactory.APPLICATION_KEY] as AllApplication
             DrawingFileViewModel(
-                application.drawingsRepository,
-                application.applicationContext
+                app.repository,
+                app.applicationContext
             )
         }
     }

@@ -4,6 +4,8 @@ import com.application_server.model.Note
 import com.application_server.repository.NotesRepository
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -45,3 +47,9 @@ fun Route.noteRoute(notesRepository: NotesRepository){
 
     }
 }
+
+fun extractPrincipalUsername(call: ApplicationCall): String? =
+    call.principal<JWTPrincipal>()
+        ?.payload
+        ?.getClaim("username")
+        ?.asString()

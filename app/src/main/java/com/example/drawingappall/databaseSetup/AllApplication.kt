@@ -6,26 +6,33 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 
 /**
- * Application class to hold global state, such as the Room database and repository.
+ * Main Application class to initialize Room database and repository.
  */
 class AllApplication : Application() {
 
-    // Application-wide coroutine scope for background operations
-    val scope = CoroutineScope(SupervisorJob())
+    /**
+     * Scope for background operations.
+     */
+    val applicationScope = CoroutineScope(SupervisorJob())
 
-    // Lazily initialized Room database instance
-    val db by lazy {
+    /**
+     * Room database instance (lazily initialized).
+     * Uses fallbackToDestructiveMigration for simplicity; consider proper migrations for production.
+     */
+    val database: DrawingsDatabase by lazy {
         Room.databaseBuilder(
             applicationContext,
             DrawingsDatabase::class.java,
-            "Drawings_database"
+            "drawing_database"
         )
-            .fallbackToDestructiveMigration() // Destroys and recreates DB on schema mismatch
+            .fallbackToDestructiveMigration() // TODO: implement migrations
             .build()
     }
 
-    // Lazily initialized repository using the DAO from the Room database
-    val drawingsRepository by lazy {
-        DrawingsRepository(scope, db.drawingsDao())
+    /**
+     * Repository for managing drawings (in-memory and on-disk).
+     */
+    val repository: DrawingsRepository by lazy {
+        DrawingsRepository(applicationScope, database.drawingsDao())
     }
 }

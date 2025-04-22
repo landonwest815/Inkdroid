@@ -52,11 +52,5 @@ fun Application.configureRouting(
   }
 }
 
-fun extractPrincipalUsername(call: ApplicationCall): String? =
-  call.principal<JWTPrincipal>()
-    ?.payload
-    ?.getClaim("username")
-    ?.asString()
-
 
 

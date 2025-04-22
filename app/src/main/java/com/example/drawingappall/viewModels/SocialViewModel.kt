@@ -16,7 +16,6 @@ import com.example.drawingappall.databaseSetup.Drawing
 import com.example.drawingappall.databaseSetup.DrawingsRepository
 import com.example.drawingappall.databaseSetup.StorageLocation
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.delete
@@ -34,226 +33,251 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.ByteArrayOutputStream
 
 /**
- * ViewModel for managing user authentication and syncing drawings with a remote server.
+ * ViewModel for handling user auth and syncing drawings with a Ktor backend.
  */
 class SocialViewModel(
     private val repository: DrawingsRepository,
     private val context: Context
 ) : ViewModel() {
 
+    companion object {
+        // TODO: Move to BuildConfig
+        private const val BASE_URL = "http://10.0.2.2:8080/api"
+    }
+
+    // --- Authentication state ---
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated
 
     private val _authError = MutableStateFlow<String?>(null)
     val authError: StateFlow<String?> = _authError
 
+    // --- Ktor client for JSON + binary uploads/downloads ---
     private val client = HttpClient(Android) {
         install(ContentNegotiation) {
-            json(Json {
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
+            json(Json { isLenient = true; ignoreUnknownKeys = true })
         }
     }
 
     init {
-        TokenStore.jwt?.takeIf { it.isNotBlank() }?.let {
-            _isAuthenticated.value = true
-        }
+        // Already logged in if we have a non-blank JWT
+        _isAuthenticated.value = !TokenStore.jwt.isNullOrBlank()
     }
 
-    /**
-     * Attempts to log in the user with the provided credentials.
-     */
-    fun login(username: String, password: String) {
-        viewModelScope.launch {
-            try {
-                val token = UserApi.login(username, password)
-                if (token != null) {
-                    TokenStore.jwt = token
-                    TokenStore.username = username
-                    _isAuthenticated.value = true
-                    _authError.value = null
-                } else {
-                    _authError.value = "Invalid credentials"
-                }
-            } catch (e: Exception) {
-                _authError.value = "Login failed: ${e.message}"
+    // === Authentication ===
+
+    fun login(username: String, password: String) = viewModelScope.launch {
+        try {
+            val token = UserApi.login(username, password)
+            if (token != null) {
+                TokenStore.jwt = token
+                TokenStore.username = username
+                _isAuthenticated.value = true
+                _authError.value = null
+            } else {
+                _authError.value = "Invalid credentials"
             }
+        } catch (e: Exception) {
+            _authError.value = "Login failed: ${e.message}"
         }
     }
 
-    /**
-     * Attempts to register a new user and log them in on success.
-     */
-    fun register(username: String, password: String) {
-        viewModelScope.launch {
-            try {
-                val success = UserApi.register(username, password)
-                if (success) {
-                    login(username, password)
-                } else {
-                    _authError.value = "Username already taken"
-                }
-            } catch (e: Exception) {
-                _authError.value = "Registration failed: ${e.message}"
+    fun register(username: String, password: String) = viewModelScope.launch {
+        try {
+            if (UserApi.register(username, password)) {
+                login(username, password)
+            } else {
+                _authError.value = "Username already taken"
             }
+        } catch (e: Exception) {
+            _authError.value = "Registration failed: ${e.message}"
         }
     }
 
-    /**
-     * Logs out the current user and clears session data.
-     */
     fun logout() {
         TokenStore.jwt = null
         TokenStore.username = null
         _isAuthenticated.value = false
     }
 
+    // === Upload a drawing ===
+
     /**
-     * Uploads the given drawing to the server.
+     * Loads a local bitmap, marks it shared locally, and POSTs it to the server.
      */
-    fun uploadFile(file: Drawing) {
-        val bitmap = repository.loadDrawing(file) ?: return
-        repository.changeStorageLocation(file, StorageLocation.Both)
+    fun uploadFile(drawing: Drawing) = viewModelScope.launch {
+        // 1) Load from disk
+        val bitmap = repository.loadFromDisk(drawing.filePath, drawing.fileName)
+            ?: return@launch
 
-        repository.scope.launch {
-            try {
-                val baos = ByteArrayOutputStream().apply {
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, this)
+        // 2) Mark as both local+server so UI shows “shared”
+        repository.updateLocation(drawing, StorageLocation.Both)
+
+        try {
+            // 3) Compress to PNG bytes
+            val pngBytes = ByteArrayOutputStream().apply {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, this)
+            }.toByteArray()
+
+            val user = TokenStore.username.orEmpty()
+            val url = "$BASE_URL/upload/$user/${drawing.fileName}"
+
+            // 4) Submit multipart POST
+            val response: HttpResponse = client.submitFormWithBinaryData(
+                url = url,
+                formData = formData {
+                    append(
+                        key = "image",
+                        value = pngBytes,
+                        headers = Headers.build {
+                            append(HttpHeaders.ContentType, "image/png")
+                            append(
+                                HttpHeaders.ContentDisposition,
+                                "filename=\"${drawing.fileName}\""
+                            )
+                            append(
+                                HttpHeaders.Authorization,
+                                "Bearer ${TokenStore.jwt}"
+                            )
+                        }
+                    )
                 }
-                val byteArray = baos.toByteArray()
-                val username = TokenStore.username ?: "unknown"
+            )
 
-                val response: HttpResponse = client.submitFormWithBinaryData(
-                    url = "http://10.0.2.2:8080/api/upload/$username/${file.fileName}",
-                    formData = formData {
-                        append(
-                            key = "image",
-                            value = byteArray,
-                            headers = Headers.build {
-                                append(HttpHeaders.ContentType, "image/png")
-                                append(HttpHeaders.ContentDisposition, "filename=\"${file.fileName}\"")
-                                append(HttpHeaders.Authorization, "Bearer ${TokenStore.jwt}")
-                            }
-                        )
-                    }
-                )
-
-                if (response.status == HttpStatusCode.OK) {
-                    Log.d("upload", "✅ Uploaded: ${file.fileName}")
-                } else {
-                    Log.e("upload", "❌ Upload failed: ${response.status}")
-                }
-            } catch (e: Exception) {
-                Log.e("upload", "❌ Error: ${e.message}")
+            if (response.status == HttpStatusCode.OK) {
+                Log.d("SocialViewModel", "Uploaded ${drawing.fileName}")
+            } else {
+                Log.e("SocialViewModel", "Upload failed: ${response.status}")
             }
+        } catch (e: Exception) {
+            Log.e("SocialViewModel", "Upload error: ${e.message}")
         }
     }
 
+    // === Fetch & download new files ===
+
     /**
-     * Fetches a list of all files on the server and downloads any new ones.
+     * Retrieves remote filename list and downloads anything missing locally.
      */
-    fun fetchFiles() {
-        repository.scope.launch {
-            try {
-                val response: HttpResponse =
-                    client.get("http://10.0.2.2:8080/api/download/file_names")
-                if (response.status == HttpStatusCode.OK) {
-                    val serverList: List<String> = response.body()
-                    serverList.forEach { serverName ->
-                        val (uploader, name) = parseFileName(serverName)
-                        repository.doesNotContainDrawing(name) {
-                            downloadFile(uploader, name)
+    fun fetchFiles() = viewModelScope.launch {
+        try {
+            val resp = client.get("$BASE_URL/download/file_names")
+            if (resp.status == HttpStatusCode.OK) {
+                val text = resp.readBytes().toString(Charsets.UTF_8)
+                val serverList = Json.parseToJsonElement(text)
+                    .jsonArray
+                    .map { it.jsonPrimitive.content }
+
+                // Purge local records of drawings removed on server
+                val allDrawings = repository.getAllDrawings() // suspend fun in repository returning List<Drawing>
+                allDrawings
+                    .filter { it.storageLocation != StorageLocation.Local }
+                    .forEach { dr ->
+                        val entry = "${dr.ownerUsername}/${dr.fileName}"
+                        if (entry !in serverList) {
+                            repository.delete(dr)
                         }
                     }
-                } else {
-                    Log.e("fetch", "❌ Fetch failed: ${response.status}")
+
+                serverList.forEach { entry ->
+                    val (uploader, name) = parseFileName(entry)
+                    // download if not already in DB
+                    repository.ifNotExists(name) { missingName ->
+                        downloadFile(uploader, missingName)
+                    }
                 }
-            } catch (e: Exception) {
-                Log.e("fetch", "❌ Error: ${e.message}")
+            } else {
+                Log.e("SocialViewModel", "Fetch failed: ${resp.status}")
             }
+        } catch (e: Exception) {
+            Log.e("SocialViewModel", "Fetch error: ${e.message}")
         }
     }
 
     /**
-     * Downloads a drawing file from the server and saves it locally.
+     * Downloads one PNG and saves it via Room + disk.
      */
-    fun downloadFile(uploader: String, fileName: String) {
-        repository.scope.launch {
-            try {
-                val url = "http://10.0.2.2:8080/api/download/$uploader/$fileName"
-                val response = client.get(url)
-                if (response.status == HttpStatusCode.OK) {
-                    val bytes = response.readBytes()
-                    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    if (bitmap != null) {
-                        val path = context.filesDir.absolutePath
-                        val drawing = Drawing(
-                            fileName = fileName,
-                            filePath = path,
-                            storageLocation = StorageLocation.Server,
-                            ownerUsername = uploader
-                        )
-                        repository.createFile(drawing)
-                        repository.saveDrawing(drawing, bitmap)
-                    }
-                } else {
-                    Log.e("download", "❌ $url → ${response.status}")
-                }
-            } catch (e: Exception) {
-                Log.e("download", "❌ Exception: ${e.message}")
+    fun downloadFile(uploader: String, fileName: String) = viewModelScope.launch {
+        try {
+            val url = "$BASE_URL/download/$uploader/$fileName"
+            val resp = client.get(url)
+            if (resp.status == HttpStatusCode.OK) {
+                val bytes = resp.readBytes()
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@launch
+
+                // Save new drawing record + file, but mark it SERVER-only
+                val path = context.filesDir.absolutePath
+                val currentUser = TokenStore.username ?: return@launch
+                val storage = if (uploader == currentUser) StorageLocation.Both
+                else                       StorageLocation.Server
+
+                val downloaded = Drawing(
+                    fileName        = fileName,
+                    filePath        = path,
+                    storageLocation = storage,
+                    ownerUsername   = uploader
+                )
+                repository.create(downloaded)
+                repository.saveToDisk(path, fileName, bitmap)
             }
+        } catch (e: Exception) { /* ... */ }
+    }
+
+
+    // === Delete remote ===
+
+    /**
+     * Sends DELETE to server, then removes locally if successful.
+     */
+    fun deleteRemote(drawing: Drawing) = viewModelScope.launch {
+        val uploader = drawing.ownerUsername ?: return@launch
+        val url = "$BASE_URL/download/$uploader/${drawing.fileName}"
+        try {
+            val resp = client.delete(url) {
+                header(HttpHeaders.Authorization, "Bearer ${TokenStore.jwt}")
+            }
+            if (resp.status == HttpStatusCode.OK) {
+                repository.delete(drawing)
+                Log.d("SocialViewModel", "Removed remote ${drawing.fileName}")
+
+                // only fetch *after* the delete has succeeded
+                fetchFiles()
+            } else {
+                Log.e("SocialViewModel", "Remote delete failed: ${resp.status}")
+            }
+        } catch (e: Exception) {
+            Log.e("SocialViewModel", "Remote delete error: ${e.message}")
         }
     }
 
-    /** Sends DELETE /api/download/{uploader}/{filename} and, on success, deletes locally too */
-    fun deleteRemote(file: Drawing) {
-        val uploader = file.ownerUsername ?: return
-        val name     = file.fileName
-
-        repository.scope.launch {
-            try {
-                val response = client.delete("http://10.0.2.2:8080/api/download/$uploader/$name") {
-                    header(HttpHeaders.Authorization, "Bearer ${TokenStore.jwt}")
-                }
-                if (response.status == HttpStatusCode.OK) {
-                    // remove the DB & file
-                    repository.deleteDrawing(file)
-                    Log.d("deleteRemote", "Deleted $name on server")
-                } else {
-                    Log.e("deleteRemote","Server delete failed: ${response.status}")
-                }
-            } catch (e: Exception) {
-                Log.e("deleteRemote","Exception: ${e.message}")
-            }
+    fun clearAll() {
+        viewModelScope.launch {
+            repository.deleteAllDrawings()  // your API call to wipe server data
         }
     }
 
-    companion object {
-        /**
-         * Splits "uploader/filename" into its two parts.
-         * E.g. "alice/sketch.png" → Pair("alice", "sketch.png")
-         */
-        private fun parseFileName(serverFileName: String): Pair<String, String> {
-            val parts = serverFileName.split("/", limit = 2)
-            return if (parts.size == 2) parts[0] to parts[1]
-            else "unknown" to serverFileName
-        }
+    // === Helpers ===
+
+    /** Splits "uploader/filename" into its parts. */
+    private fun parseFileName(entry: String): Pair<String, String> {
+        val parts = entry.split("/", limit = 2)
+        return if (parts.size == 2) parts[0] to parts[1] else "unknown" to entry
     }
 }
 
 /**
- * ViewModel provider for creating [SocialViewModel] with required app dependencies.
+ * Factory for creating [SocialViewModel] with necessary app deps.
  */
 object SocialViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
             val app = this[AndroidViewModelFactory.APPLICATION_KEY] as AllApplication
-            SocialViewModel(app.drawingsRepository, app.applicationContext)
+            SocialViewModel(app.repository, app.applicationContext)
         }
     }
 }
