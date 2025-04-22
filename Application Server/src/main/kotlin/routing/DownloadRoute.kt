@@ -45,4 +45,24 @@ fun Route.downloadRoute() {
         }
         call.respondFile(file)
     }
+
+    // 3) DELETE any user’s file
+    delete("/{uploader}/{filename}") {
+        val uploader = call.parameters["uploader"]!!
+        val filename = call.parameters["filename"]!!
+        val file = (uploadDir / uploader / filename).toFile()
+
+        when {
+            !file.exists() ->
+                call.respond(HttpStatusCode.NotFound,"Not found")
+            file.delete() -> {
+                // remove empty folder if you like
+                val dir = file.parentFile
+                if (dir.listFiles()?.isEmpty() == true) dir.delete()
+                call.respond(HttpStatusCode.OK)
+            }
+            else ->
+                call.respond(HttpStatusCode.InternalServerError,"Could not delete")
+        }
+    }
 }

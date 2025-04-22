@@ -154,38 +154,48 @@ fun DrawingFileCard(
     modifier: Modifier = Modifier
 ) {
     var isDownloaded by remember { mutableStateOf(false) }
+    val currentUser = TokenStore.username
 
     Column(modifier = modifier) {
         Card(modifier = Modifier.aspectRatio(1f)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable {
-                        val path = Uri.encode(file.filePath)
-                        navController.navigate("draw/$path/${file.fileName}")
-                    }
-                    .testTag("DrawingCard_${file.fileName}")
-                    .paint(
-                        painter = rememberAsyncImagePainter(
-                            model = File(file.filePath, file.fileName).absolutePath
-                        )
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .clickable {
+                    val path = Uri.encode(file.filePath)
+                    navController.navigate("draw/$path/${file.fileName}")
+                }
+                .testTag("DrawingCard_${file.fileName}")
+                .paint(
+                    painter = rememberAsyncImagePainter(
+                        model = File(file.filePath, file.fileName).absolutePath
                     )
+                )
             ) {
-                val me = TokenStore.username
-
-                // Delete if it's mine or local
-                if (localImages || file.ownerUsername == me) {
+                // Delete icon in top-end
+                if (localImages) {
                     IconButton(
                         onClick = { dvm.deleteFile(file) },
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .testTag("Delete_${file.fileName}")
+                            .testTag("DeleteLocal_${file.fileName}")
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Delete", tint = Color.Gray)
+                        Icon(Icons.Default.Close, contentDescription = "Delete from device", tint = Color.Gray)
+                    }
+                } else if (file.ownerUsername == currentUser) {
+                    IconButton(
+                        onClick = {
+                            svm.deleteRemote(file)
+                            svm.fetchFiles()
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .testTag("DeleteServer_${file.fileName}")
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Delete from server", tint = Color.Gray)
                     }
                 }
 
-                // Upload (local) or Download (remote)
+                // Upload (local) or Download (remote) icon in top-start
                 if (localImages) {
                     IconButton(
                         onClick = { svm.uploadFile(file) },

@@ -19,9 +19,11 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.readBytes
 import io.ktor.http.Headers
@@ -204,6 +206,29 @@ class SocialViewModel(
                 }
             } catch (e: Exception) {
                 Log.e("download", "❌ Exception: ${e.message}")
+            }
+        }
+    }
+
+    /** Sends DELETE /api/download/{uploader}/{filename} and, on success, deletes locally too */
+    fun deleteRemote(file: Drawing) {
+        val uploader = file.ownerUsername ?: return
+        val name     = file.fileName
+
+        repository.scope.launch {
+            try {
+                val response = client.delete("http://10.0.2.2:8080/api/download/$uploader/$name") {
+                    header(HttpHeaders.Authorization, "Bearer ${TokenStore.jwt}")
+                }
+                if (response.status == HttpStatusCode.OK) {
+                    // remove the DB & file
+                    repository.deleteDrawing(file)
+                    Log.d("deleteRemote", "Deleted $name on server")
+                } else {
+                    Log.e("deleteRemote","Server delete failed: ${response.status}")
+                }
+            } catch (e: Exception) {
+                Log.e("deleteRemote","Exception: ${e.message}")
             }
         }
     }
