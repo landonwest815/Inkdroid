@@ -11,33 +11,43 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 /**
- * Repository for managing drawing files and syncing with Room database.
- * Handles file I/O, persistence, and metadata via DAO.
+ * Manages drawing files and metadata. Handles disk I/O and DB operations.
  */
 class DrawingsRepository(
     val scope: CoroutineScope,
-    private val dao: DrawingsDAO
+    private val dao: DrawingsDao
 ) {
 
-    // Observes the list of drawing entries in the database
-    val drawings: Flow<List<Drawing>> = dao.getAllDrawings()
+    /** Stream of all drawings. */
+    val allDrawings: Flow<List<Drawing>> = dao.getAllDrawings()
+
+    // -------- Creation & Deletion --------
 
     /**
-     * Creates a new drawing entry in the database.
+     * Enqueues insertion of a new Drawing record.
      */
-    fun createFile(file: Drawing) {
-        scope.launch {
-            dao.createDrawing(file)
-        }
+    fun create(drawing: Drawing) {
+        scope.launch { dao.insert(drawing) }
     }
 
     /**
-     * Saves the given [bitmap] to the specified [filePath] and [fileName].
+     * Deletes file from disk and its record.
      */
-    fun saveDrawing(filePath: String, fileName: String, bitmap: Bitmap) {
-        val path = File(filePath, fileName).absolutePath
+    fun delete(drawing: Drawing) {
+        val file = File(drawing.filePath, drawing.fileName)
+        if (file.exists()) file.delete()
+        scope.launch { dao.delete(drawing) }
+    }
+
+    // -------- Save & Load --------
+
+    /**
+     * Writes [bitmap] to disk at [filePath]/[fileName].
+     */
+    fun saveToDisk(filePath: String, fileName: String, bitmap: Bitmap) {
+        val target = File(filePath, fileName)
         try {
-            FileOutputStream(File(path)).use { fos ->
+            FileOutputStream(target).use { fos ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
             }
         } catch (e: IOException) {
@@ -46,77 +56,74 @@ class DrawingsRepository(
     }
 
     /**
-     * Loads a drawing from disk.
-     * Returns null if the file doesn't exist (e.g., when creating a new drawing).
+     * Loads a Bitmap from disk; returns null if missing.
      */
-    fun loadDrawing(filePath: String, fileName: String): Bitmap? {
+    fun loadFromDisk(filePath: String, fileName: String): Bitmap? {
         val file = File(filePath, fileName)
         if (!file.exists()) return null
-
         return try {
-            FileInputStream(file.absolutePath).use { input ->
-                BitmapFactory.decodeStream(input)
-            }
+            FileInputStream(file).use { BitmapFactory.decodeStream(it) }
         } catch (e: IOException) {
-            e.printStackTrace()
-            throw RuntimeException("Error loading drawing from file: ${file.absolutePath}", e)
+            throw RuntimeException("Failed to load drawing: ${file.absolutePath}", e)
         }
     }
 
-    /**
-     * Deletes the drawing file from disk and its corresponding entry from the database.
-     */
-    fun deleteDrawing(file: Drawing) {
-        val fileToDelete = File(file.filePath, file.fileName)
-        if (fileToDelete.exists()) {
-            fileToDelete.delete()
-        }
-
-        scope.launch {
-            dao.deleteDrawing(file)
-        }
-    }
+    // -------- Rename & Storage Location --------
 
     /**
-     * Renames a drawing's file on disk and updates the database record.
-     *
-     * [onResult] is called with `true` if successful, `false` otherwise.
+     * Renames a drawing on disk and updates its DB record.
+     * Calls [onResult] with success status.
      */
-    fun renameDrawing(
-        filePath: String,
+    fun rename(
+        dirPath: String,
         oldName: String,
         newName: String,
         onResult: (Boolean) -> Unit
     ) {
-        val oldFile = File(filePath, oldName)
-        val newFile = File(filePath, newName)
-
-        if (!oldFile.exists()) {
-            onResult(false) // File doesn't exist
-            return
-        }
-
+        val oldFile = File(dirPath, oldName)
+        val newFile = File(dirPath, newName)
+        if (!oldFile.exists()) { onResult(false); return }
         scope.launch {
-            val nameTaken = dao.fileNameExists(newName) > 0
-            if (nameTaken) {
-                onResult(false) // New name is already in use
-                return@launch
-            }
-
-            val renamed = oldFile.renameTo(newFile)
-            if (renamed) {
-                val oldDrawing = dao.getDrawingByName(oldName)
-                if (oldDrawing != null) {
-                    val updatedDrawing = Drawing(newName, filePath).apply {
-                        id = oldDrawing.id
-                    }
-                    dao.deleteDrawing(oldDrawing)
-                    dao.createDrawing(updatedDrawing)
-                }
+            if (dao.countByName(newName) > 0) { onResult(false); return@launch }
+            val ok = oldFile.renameTo(newFile)
+            if (ok) dao.findByName(oldName)?.let {
+                dao.update(it.copy(fileName = newName))
                 onResult(true)
-            } else {
-                onResult(false) // File rename failed
-            }
+            } else onResult(false)
+        }
+    }
+
+    /** Updates the storage location flag in DB. */
+    fun updateLocation(drawing: Drawing, location: StorageLocation) {
+        scope.launch { dao.update(drawing.copy(storageLocation = location)) }
+    }
+
+    // -------- Existence Check --------
+
+    /**
+     * Executes [onMissing] if no drawing exists under [name].
+     */
+    fun ifNotExists(name: String, onMissing: (String) -> Unit) {
+        scope.launch {
+            if (dao.countByName(name) == 0) onMissing(name)
+        }
+    }
+
+    /**
+     * Returns a snapshot list of all drawings from the database.
+     */
+    suspend fun getAllDrawings(): List<Drawing> =
+        dao.getAllDrawingsOnce()
+
+
+    /**
+     * Deletes *every* drawing record and its PNG file from disk.
+     */
+    fun deleteAllDrawings() {
+        scope.launch {
+            val drawings = dao.getAllDrawingsOnce()
+            drawings.forEach { File(it.filePath, it.fileName).delete() }
+            dao.deleteAllDrawings()
         }
     }
 }

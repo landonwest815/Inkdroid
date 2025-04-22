@@ -6,60 +6,33 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.drawingappall.R
-import com.example.drawingappall.viewModels.BrushShape
-import com.example.drawingappall.viewModels.DrawingFileViewModel
-import com.example.drawingappall.viewModels.DrawingViewModel
-import com.example.drawingappall.viewModels.DrawingViewModelProvider
+import com.example.drawingappall.viewModels.*
 
+
+/**
+ * Host composable for the drawing screen: loads the bitmap, shows header, canvas, and controls.
+ */
 @Composable
 fun DrawScreen(
     vm: DrawingFileViewModel = viewModel(factory = DrawingViewModelProvider.Factory),
@@ -68,71 +41,68 @@ fun DrawScreen(
     filePath: String,
     fileName: String
 ) {
+    var currentName by remember { mutableStateOf(fileName) }
 
-    // State for current file name that updates UI when changed
-    var currentFileName by remember { mutableStateOf(fileName) }
-
-    // Loads drawing when screen is recomposed (e.g., color or filename changes)
-    LaunchedEffect(filePath, currentFileName) {
-        viewModel.loadDrawing(filePath, currentFileName)
+    // Load the bitmap whenever path or name changes
+    LaunchedEffect(filePath, currentName) {
+        viewModel.loadDrawing(filePath, currentName)
     }
 
-    // Collect UI state from ViewModel
     val bitmap by viewModel.bitmap.collectAsState()
     val shapeSize by viewModel.shapeSize.collectAsState()
-    val color by viewModel.color.collectAsState()
+    val brushColor by viewModel.color.collectAsState()
 
-    // Main layout
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .background(Color(0xFFEEEEEE))
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(Color(0xFFEEEEEE)),
+        contentAlignment = Alignment.Center
     ) {
+        val screenWidth = LocalConfiguration.current.screenWidthDp
+        val horizontalPadding = if (screenWidth >= 720) 24.dp else 32.dp
 
-        // back arrow + file name
-        DrawScreenHeader(
-            currentFileName = currentFileName,
-            onRename = { newName, resultCallback ->
-                viewModel.saveDrawing(filePath, currentFileName)
-                vm.renameDrawing(filePath, currentFileName, newName) { success ->
-                    if (success) currentFileName = newName
-                    resultCallback(success)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalPadding, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            DrawScreenHeader(
+                currentFileName = currentName,
+                onRename = { newName, callback ->
+                    viewModel.saveDrawing(filePath, currentName)
+                    vm.renameFile(filePath, currentName, newName) { success ->
+                        if (success) currentName = newName
+                        callback(success)
+                    }
+                },
+                onSaveAndClose = {
+                    viewModel.saveDrawing(filePath, currentName)
+                    navController.popBackStack()
                 }
-            },
-            onSaveAndClose = {
-                viewModel.saveDrawing(filePath, currentFileName)
-                navController.popBackStack()
-            }
-        )
+            )
 
-        // the actual square canvas
-        DrawingCanvas(bitmap = bitmap, viewModel = viewModel)
+            DrawingCanvas(bitmap = bitmap, viewModel = viewModel)
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // slider for shape size
-        SizeSlider(shapeSize = shapeSize, onSizeChange = viewModel::updateSize, color = color)
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // shape selector
-        BrushShapeSelector(viewModel = viewModel, color = color)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // color changer + reset button
-        ActionButtons(
-            onPickColor = viewModel::pickColor,
-            onReset = viewModel::resetCanvas,
-            color = color
-        )
+            DrawControls(
+                shapeSize = shapeSize,
+                onSizeChange = viewModel::updateSize,
+                brushColor = brushColor,
+                viewModel = viewModel,
+                onPickColor = viewModel::pickColor,
+                onReset = viewModel::resetCanvas,
+                onBlur = viewModel::blur,
+                onSharpen = viewModel::sharpen
+            )
+        }
     }
 }
 
+
+/*----- Header -----*/
+
+/** Displays back button and renameable file name. */
 @Composable
 private fun DrawScreenHeader(
     currentFileName: String,
@@ -145,7 +115,6 @@ private fun DrawScreenHeader(
             .padding(horizontal = 25.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Save and go back
         IconButton(
             onClick = onSaveAndClose,
             modifier = Modifier.align(Alignment.CenterStart)
@@ -157,7 +126,6 @@ private fun DrawScreenHeader(
             )
         }
 
-        // Editable file name
         RenameableFileName(
             fileName = currentFileName,
             onRename = onRename
@@ -165,6 +133,7 @@ private fun DrawScreenHeader(
     }
 }
 
+/** Clickable file name with rename dialog. */
 @Composable
 fun RenameableFileName(
     fileName: String,
@@ -174,7 +143,6 @@ fun RenameableFileName(
     var newName by remember { mutableStateOf(fileName) }
     var showError by remember { mutableStateOf(false) }
 
-    // file name text
     Text(
         text = fileName,
         color = Color.Gray,
@@ -189,7 +157,6 @@ fun RenameableFileName(
             .testTag("FileNameDisplay")
     )
 
-    // shown when the file name is clicked on
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -212,18 +179,19 @@ fun RenameableFileName(
                 }
             },
             confirmButton = {
-                Text("Rename", modifier = Modifier
-                    .clickable {
-
-                        if (newName.isNotBlank() && newName != fileName) {
-                            onRename(newName) { success ->
-                                if (success) showDialog = false else showError = true
+                Text(
+                    "Rename",
+                    modifier = Modifier
+                        .clickable {
+                            if (newName.isNotBlank() && newName != fileName) {
+                                onRename(newName) { success ->
+                                    if (success) showDialog = false else showError = true
+                                }
+                            } else {
+                                showDialog = false
                             }
-                        } else {
-                            showDialog = false
                         }
-                    }
-                    .testTag("RenameConfirm")
+                        .testTag("RenameConfirm")
                 )
             },
             dismissButton = {
@@ -233,64 +201,155 @@ fun RenameableFileName(
     }
 }
 
+
+/*----- Canvas -----*/
+
+/** Shows the drawing canvas and handles touch input. */
 @Composable
-private fun DrawingCanvas(bitmap: Bitmap, viewModel: DrawingViewModel) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .aspectRatio(1f),
+private fun DrawingCanvas(
+    bitmap: Bitmap,
+    viewModel: DrawingViewModel
+) {
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
-        AndroidView(
-            factory = { context -> BitmapView(context, null).apply { setBitmap(bitmap) } },
-            update = { view -> view.setBitmap(bitmap) },
+        val sizeDp = if (this.maxWidth > 500.dp) 500.dp else maxWidth
+
+        Box(
             modifier = Modifier
-                .fillMaxSize()
+                .width(sizeDp)
                 .aspectRatio(1f)
-                .background(Color.White)
-                // Tap gestures
-                .pointerInput(Unit) {
-                    detectTapGestures { tapOffset ->
-                        viewModel.drawOnCanvas(
-                            x = tapOffset.x,
-                            y = tapOffset.y,
-                            viewWidth = size.width,
-                            viewHeight = size.height
-                        )
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            AndroidView(
+                factory = { ctx -> BitmapView(ctx, null).apply { setBitmap(bitmap) } },
+                update = { it.setBitmap(bitmap) },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures { pos ->
+                            viewModel.drawOnCanvas(pos.x, pos.y, viewWidth = size.width, viewHeight = size.height)
+                        }
                     }
-                }
-                // Drag gestures
-                .pointerInput(Unit) {
-                    detectDragGestures { change, _ ->
-                        viewModel.drawOnCanvas(
-                            x = change.position.x,
-                            y = change.position.y,
-                            viewWidth = size.width,
-                            viewHeight = size.height
-                        )
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, _ ->
+                            viewModel.drawOnCanvas(change.position.x, change.position.y, viewWidth = size.width, viewHeight = size.height)
+                        }
                     }
-                }
-        )
+            )
+        }
     }
 }
 
-@Composable
-private fun SizeSlider(shapeSize: Float, onSizeChange: (Float) -> Unit, color: Color) {
-    Row(
-        modifier = Modifier.padding(horizontal = 32.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("Size", color = Color.Gray, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(modifier = Modifier.width(8.dp))
-        Text("${shapeSize.toInt()}", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.width(16.dp))
 
+/*----- Controls -----*/
+
+/**
+ * Groups size slider, shape selector, and action buttons.
+ * Layout adjusts for tablet vs phone widths.
+ */
+@Composable
+private fun DrawControls(
+    shapeSize: Float,
+    onSizeChange: (Float) -> Unit,
+    brushColor: Color,
+    viewModel: DrawingViewModel,
+    onPickColor: () -> Unit,
+    onReset: () -> Unit,
+    onBlur: () -> Unit,
+    onSharpen: () -> Unit
+) {
+    val isTablet = LocalConfiguration.current.screenWidthDp >= 720
+
+    if (isTablet) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(32.dp)
+            ) {
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    SizeSlider(shapeSize, onSizeChange, brushColor)
+                }
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    BrushShapeSelector(viewModel = viewModel, color = brushColor)
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ActionButton("Change Color", brushColor, onPickColor, Modifier.weight(1f))
+                ActionButton("Reset", Color.Red, onReset, Modifier.weight(1f))
+                ActionButton("Blur", Color.Black, onBlur, Modifier.weight(1f))
+                ActionButton("Sharpen", Color.Black, onSharpen, Modifier.weight(1f))
+            }
+        }
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SizeSlider(shapeSize, onSizeChange, brushColor)
+            BrushShapeSelector(viewModel = viewModel, color = brushColor)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ActionButton("Change Color", brushColor, onPickColor, Modifier.weight(1f))
+                ActionButton("Reset", Color.Red, onReset, Modifier.weight(1f))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ActionButton("Blur", Color.Black, onBlur, Modifier.weight(1f))
+                ActionButton("Sharpen", Color.Black, onSharpen, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+
+/*----- Reusable Components -----*/
+
+/** Displays and styles a simple button with text. */
+@Composable
+private fun ActionButton(
+    text: String,
+    backgroundColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(containerColor = backgroundColor)
+    ) {
+        Text(text, color = Color.White)
+    }
+}
+
+/** Slider for brush size with label and value display. */
+@Composable
+private fun SizeSlider(
+    shapeSize: Float,
+    onSizeChange: (Float) -> Unit,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Text("Size", color = Color.Gray, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.width(8.dp))
+        Text("${shapeSize.toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.width(16.dp))
         Slider(
             value = shapeSize,
             onValueChange = onSizeChange,
             valueRange = 5f..100f,
             modifier = Modifier
-                .fillMaxWidth()
+                .weight(1f)
                 .testTag("BrushSizeSlider"),
             colors = SliderDefaults.colors(
                 thumbColor = color,
@@ -301,41 +360,38 @@ private fun SizeSlider(shapeSize: Float, onSizeChange: (Float) -> Unit, color: C
     }
 }
 
+/** Row of shape-selection buttons for different brush shapes. */
 @Composable
 fun BrushShapeSelector(
     viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory),
-    color: Color
+    color: Color,
+    modifier: Modifier = Modifier
 ) {
-    val selected by viewModel.brushShape.collectAsState()
-    val circleIcon = painterResource(id = R.drawable.circle)
-    val triangleIcon = painterResource(id = R.drawable.triangle)
-    val squareIcon = painterResource(id = R.drawable.square)
+    val selectedShape by viewModel.brushShape.collectAsState()
+    val icons = listOf(
+        BrushShape.Square to painterResource(R.drawable.square),
+        BrushShape.Circle to painterResource(R.drawable.circle),
+        BrushShape.Triangle to painterResource(R.drawable.triangle)
+    )
 
-    Row(
-        modifier = Modifier.padding(horizontal = 32.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Text("Shape", color = Color.Gray, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(modifier = Modifier.width(8.dp))
-
-        ShapeButton(BrushShape.Square, selected == BrushShape.Square, squareIcon, color) {
-            viewModel.changeShape(BrushShape.Square)
-        }
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        ShapeButton(BrushShape.Circle, selected == BrushShape.Circle, circleIcon, color) {
-            viewModel.changeShape(BrushShape.Circle)
-        }
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        ShapeButton(BrushShape.Triangle, selected == BrushShape.Triangle, triangleIcon, color) {
-            viewModel.changeShape(BrushShape.Triangle)
+        Spacer(Modifier.width(8.dp))
+        icons.forEach { (shape, icon) ->
+            ShapeButton(
+                shape = shape,
+                selected = (shape == selectedShape),
+                icon = icon,
+                tintColor = color
+            ) {
+                viewModel.changeShape(shape)
+            }
+            Spacer(Modifier.width(4.dp))
         }
     }
 }
 
+/** Individual shape button with icon and selection tint. */
 @Composable
 private fun RowScope.ShapeButton(
     shape: BrushShape,
@@ -346,47 +402,17 @@ private fun RowScope.ShapeButton(
 ) {
     Button(
         onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
         modifier = Modifier
             .weight(1f)
-            .testTag("${shape.name}Button")
+            .aspectRatio(1f)
+            .testTag("${shape.name}Button"),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
     ) {
         Image(
             painter = icon,
             contentDescription = "$shape Button",
+            modifier = Modifier.size(40.dp),
             colorFilter = ColorFilter.tint(if (selected) tintColor else Color(0xFFBDBDBD))
         )
-    }
-}
-
-@Composable
-private fun ActionButtons(
-    onPickColor: () -> Unit,
-    onReset: () -> Unit,
-    color: Color
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Button(
-            onClick = onPickColor,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(containerColor = color)
-        ) {
-            Text("Change Color", color = Color.White)
-        }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Button(
-            onClick = onReset,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-        ) {
-            Text("Reset Canvas", color = Color.White)
-        }
     }
 }

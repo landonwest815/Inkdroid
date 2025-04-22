@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import android.graphics.Color as AndroidColor
 import androidx.lifecycle.ViewModel
@@ -12,13 +13,14 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.drawingappall.databaseSetup.AllApplication
 import com.example.drawingappall.databaseSetup.DrawingsRepository
+import com.example.drawingappall.jni.ImageModification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.random.Random
 
 /**
- * Enum for different brush shapes
+ * Enum representing available brush shapes.
  */
 enum class BrushShape {
     Square,
@@ -27,125 +29,153 @@ enum class BrushShape {
 }
 
 /**
- * ViewModel for managing a drawable canvas in a Jetpack Compose app.
- * Handles drawing logic, color selection, brush shapes, and bitmap persistence.
+ * ViewModel for managing a drawing canvas bitmap.
+ * Supports brush settings, drawing operations, and native image filters.
  */
 class DrawingViewModel(
     private val repository: DrawingsRepository
 ) : ViewModel() {
 
-    // Holds the bitmap that acts as the canvas
-    private val _bitmap = MutableStateFlow(createEmptyBitmap())
-    val bitmap: StateFlow<Bitmap> = _bitmap
-
-    // Current drawing color (default: Black)
-    private val _color = MutableStateFlow(Color.Black)
-    val color: StateFlow<Color> = _color
-
-    // Size of brush strokes (default: 66f, limited between 5 and 100)
-    private val _shapeSize = MutableStateFlow(66f)
-    val shapeSize: StateFlow<Float> = _shapeSize
-
-    // Current selected brush shape (default: Circle)
-    private val _brushShape = MutableStateFlow(BrushShape.Circle)
-    val brushShape: StateFlow<BrushShape> = _brushShape
-
-    // Paint object for rendering
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-    }
-
     companion object {
         private const val BITMAP_WIDTH = 800
         private const val BITMAP_HEIGHT = 800
 
-        // Creates a new transparent bitmap
+        /**
+         * Creates a blank ARGB_8888 bitmap of fixed size.
+         */
         private fun createEmptyBitmap(): Bitmap =
             Bitmap.createBitmap(BITMAP_WIDTH, BITMAP_HEIGHT, Bitmap.Config.ARGB_8888)
     }
 
-    // Loads an existing bitmap from storage or creates a new empty one
+    // -------- State Flows --------
+
+    private val _bitmap = MutableStateFlow(createEmptyBitmap())
+    val bitmap: StateFlow<Bitmap> = _bitmap
+
+    private val _color = MutableStateFlow(Color.Black)
+    val color: StateFlow<Color> = _color
+
+    private val _shapeSize = MutableStateFlow(66f)
+    val shapeSize: StateFlow<Float> = _shapeSize
+
+    private val _brushShape = MutableStateFlow(BrushShape.Circle)
+    val brushShape: StateFlow<BrushShape> = _brushShape
+
+    // -------- Drawing Utilities --------
+
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+    private val bitmapEditor = ImageModification()
+
+    // -------- Canvas Lifecycle --------
+
+    /**
+     * Load bitmap from disk or reset to blank if missing.
+     */
     fun loadDrawing(filePath: String, fileName: String) {
-        val loadedBitmap = repository.loadDrawing(filePath, fileName)
-        _bitmap.value = loadedBitmap ?: createEmptyBitmap()
+        val loaded = repository.loadFromDisk(filePath, fileName)
+        _bitmap.value = loaded ?: createEmptyBitmap()
     }
 
-    // Saves the current bitmap to file
+    /**
+     * Save current canvas bitmap to disk.
+     */
     fun saveDrawing(filePath: String, fileName: String) {
-        repository.saveDrawing(filePath, fileName, bitmap.value)
+        repository.saveToDisk(filePath, fileName, _bitmap.value)
     }
 
-    // Resets canvas to a blank state
+    /**
+     * Reset canvas to a blank bitmap.
+     */
     fun resetCanvas() {
         _bitmap.value = createEmptyBitmap()
     }
 
-    // Updates brush size while keeping it within allowed limits
+    // -------- Brush Configuration --------
+
+    /**
+     * Update brush size, constrained between 5 and 100.
+     */
     fun updateSize(newSize: Float) {
         _shapeSize.update { newSize.coerceIn(5f, 100f) }
     }
 
-    // Updates the selected brush shape and triggers a fake draw to show UI change
+    /**
+     * Change brush shape and trigger a preview refresh.
+     */
     fun changeShape(brushShape: BrushShape) {
         _brushShape.value = brushShape
-        drawOnCanvas(-99999f, -99999f, 100, 100) // force UI to reflect shape change
+        // Force UI recomposition for shape preview
+        drawOnCanvas(-1f, -1f, 1, 1)
     }
 
-    // Randomly changes the current drawing color
+    /**
+     * Select a random RGB color for the brush.
+     */
     fun pickColor() {
         _color.update {
-            it.copy(
-                red = Random.nextFloat(),
-                green = Random.nextFloat(),
-                blue = Random.nextFloat()
+            Color(
+                Random.nextFloat(),
+                Random.nextFloat(),
+                Random.nextFloat(),
+                1f
             )
         }
     }
 
+    // -------- Native Image Filters --------
+
+    fun blur() {
+        Log.d("DrawingViewModel", "Applying blur filter")
+        bitmapEditor.blur(_bitmap.value)
+        val cfg = _bitmap.value.config ?: Bitmap.Config.ARGB_8888
+        _bitmap.value = _bitmap.value.copy(cfg, true)
+    }
+
+    fun sharpen() {
+        Log.d("DrawingViewModel", "Applying sharpen filter")
+        bitmapEditor.sharpen(_bitmap.value)
+        val cfg = _bitmap.value.config ?: Bitmap.Config.ARGB_8888
+        _bitmap.value = _bitmap.value.copy(cfg, true)
+    }
+
+
+    // -------- Drawing on Canvas --------
 
     /**
-     * Draws on the canvas at given coordinates, scaled to bitmap dimensions.
-     *
-     * @param x Touch x-coordinate (in view space)
-     * @param y Touch y-coordinate (in view space)
-     * @param viewWidth Width of the view
-     * @param viewHeight Height of the view
+     * Draw current brush shape onto the bitmap at given view coords.
+     * @param x touch X in view coords
+     * @param y touch Y in view coords
+     * @param viewWidth width of the drawing view
+     * @param viewHeight height of the drawing view
      */
     fun drawOnCanvas(x: Float, y: Float, viewWidth: Int, viewHeight: Int) {
-        val oldBitmap = _bitmap.value
-        val newBitmap = oldBitmap.copy(Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(newBitmap)
+        val srcBitmap = _bitmap.value
+        val mutable = srcBitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(mutable)
 
-        // Scale coordinates to bitmap space
-        val scaledX = x * newBitmap.width / viewWidth
-        val scaledY = y * newBitmap.height / viewHeight
+        val scaledX = x * mutable.width / viewWidth
+        val scaledY = y * mutable.height / viewHeight
 
-        // Draw the selected shape
         paint.color = _color.value.toAndroidColor()
         drawShape(scaledX, scaledY, paint, canvas)
 
-        _bitmap.value = newBitmap
+        _bitmap.value = mutable
     }
 
     /**
-     * Draws the shape on the canvas based on the selected brush shape.
+     * Draws the selected brush shape at bitmap coords.
      */
     private fun drawShape(scaledX: Float, scaledY: Float, paint: Paint, canvas: Canvas) {
         val size = _shapeSize.value
-
         when (_brushShape.value) {
-            BrushShape.Circle -> {
-                canvas.drawCircle(scaledX, scaledY, size, paint)
-            }
-
-            BrushShape.Square -> {
-                canvas.drawRect(
-                    scaledX - size, scaledY - size,
-                    scaledX + size, scaledY + size,
-                    paint
-                )
-            }
-
+            BrushShape.Circle -> canvas.drawCircle(scaledX, scaledY, size, paint)
+            BrushShape.Square -> canvas.drawRect(
+                scaledX - size, scaledY - size,
+                scaledX + size, scaledY + size,
+                paint
+            )
             BrushShape.Triangle -> {
                 val path = Path().apply {
                     moveTo(scaledX, scaledY - size)
@@ -158,25 +188,28 @@ class DrawingViewModel(
         }
     }
 
-    // Converts Jetpack Compose Color to Android ARGB Int
+    // -------- Helpers --------
+
+    /**
+     * Convert Compose Color to Android ARGB int.
+     */
     private fun Color.toAndroidColor(): Int = AndroidColor.argb(
-        255,
+        (alpha * 255).toInt(),
         (red * 255).toInt(),
         (green * 255).toInt(),
         (blue * 255).toInt()
     )
 
+    // -------- ViewModel Factory --------
+
     /**
-     * ViewModel Factory for DrawingViewModel.
-     * Pulls the repository from the custom Application class.
+     * Factory for injecting repository dependency.
      */
     object DrawingViewModelProvider {
         val Factory = viewModelFactory {
             initializer {
-                DrawingViewModel(
-                    (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AllApplication)
-                        .drawingsRepository
-                )
+                val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AllApplication
+                DrawingViewModel(app.repository)
             }
         }
     }

@@ -1,0 +1,13 @@
+ktor:
+  application:
+    modules:
+      - com.all.ApplicationKt.module
+  deployment:
+    port: 8080
+
+jwt:
+  secret : "userSecret"
+  issuer : "http://10.0.2.2:8080/"
+  audience : "http://10.0.2.2:8080/hello"
+  realm : "Access to 'hello'"
+  expiration_time : 10000
