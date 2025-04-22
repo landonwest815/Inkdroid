@@ -7,8 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -19,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -30,9 +29,6 @@ import androidx.navigation.NavController
 import com.example.drawingappall.R
 import com.example.drawingappall.viewModels.*
 
-/**
- * Main drawing screen containing canvas, tools, and controls.
- */
 @Composable
 fun DrawScreen(
     vm: DrawingFileViewModel = viewModel(factory = DrawingViewModelProvider.Factory),
@@ -51,49 +47,139 @@ fun DrawScreen(
     val shapeSize by viewModel.shapeSize.collectAsState()
     val color by viewModel.color.collectAsState()
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .background(Color(0xFFEEEEEE))
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(Color(0xFFEEEEEE)),
+        contentAlignment = Alignment.Center
     ) {
-        DrawScreenHeader(
-            currentFileName = currentFileName,
-            onRename = { newName, resultCallback ->
-                viewModel.saveDrawing(filePath, currentFileName)
-                vm.renameDrawing(filePath, currentFileName, newName) { success ->
-                    if (success) currentFileName = newName
-                    resultCallback(success)
+        val screenWidthDp = LocalConfiguration.current.screenWidthDp
+        val horizontalPadding = if (screenWidthDp >= 720) 24.dp else 32.dp
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalPadding, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            DrawScreenHeader(
+                currentFileName = currentFileName,
+                onRename = { newName, resultCallback ->
+                    viewModel.saveDrawing(filePath, currentFileName)
+                    vm.renameDrawing(filePath, currentFileName, newName) { success ->
+                        if (success) currentFileName = newName
+                        resultCallback(success)
+                    }
+                },
+                onSaveAndClose = {
+                    viewModel.saveDrawing(filePath, currentFileName)
+                    navController.popBackStack()
                 }
-            },
-            onSaveAndClose = {
-                viewModel.saveDrawing(filePath, currentFileName)
-                navController.popBackStack()
+            )
+
+            DrawingCanvas(bitmap = bitmap, viewModel = viewModel)
+
+            DrawControls(
+                shapeSize = shapeSize,
+                onSizeChange = viewModel::updateSize,
+                brushColor = color,
+                viewModel = viewModel,
+                onPickColor = viewModel::pickColor,
+                onReset = viewModel::resetCanvas,
+                onBlur = viewModel::blur,
+                onSharpen = viewModel::sharpen
+            )
+        }
+    }
+}
+
+@Composable
+private fun DrawControls(
+    shapeSize: Float,
+    onSizeChange: (Float) -> Unit,
+    brushColor: Color,
+    viewModel: DrawingViewModel,
+    onPickColor: () -> Unit,
+    onReset: () -> Unit,
+    onBlur: () -> Unit,
+    onSharpen: () -> Unit
+) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val isTablet = screenWidthDp >= 720
+
+    if (isTablet) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min), // Ensures child alignment
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(32.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
+                    SizeSlider(
+                        shapeSize = shapeSize,
+                        onSizeChange = onSizeChange,
+                        color = brushColor
+                    )
+                }
+
+                Box(modifier = Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
+                    BrushShapeSelector(
+                        viewModel = viewModel,
+                        color = brushColor
+                    )
+                }
             }
-        )
 
-        DrawingCanvas(bitmap = bitmap, viewModel = viewModel)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ActionButton("Change Color", brushColor, onPickColor, Modifier.weight(1f))
+                ActionButton("Reset", Color.Red, onReset, Modifier.weight(1f))
+                ActionButton("Blur", Color.Black, onBlur, Modifier.weight(1f))
+                ActionButton("Sharpen", Color.Black, onSharpen, Modifier.weight(1f))
+            }
+        }
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SizeSlider(shapeSize = shapeSize, onSizeChange = onSizeChange, color = brushColor)
+            BrushShapeSelector(viewModel = viewModel, color = brushColor)
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ActionButton("Change Color", brushColor, onPickColor, Modifier.weight(1f))
+                ActionButton("Reset", Color.Red, onReset, Modifier.weight(1f))
+            }
 
-        SizeSlider(shapeSize = shapeSize, onSizeChange = viewModel::updateSize, color = color)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ActionButton("Blur", Color.Black, onBlur, Modifier.weight(1f))
+                ActionButton("Sharpen", Color.Black, onSharpen, Modifier.weight(1f))
+            }
+        }
+    }
+}
 
-        Spacer(modifier = Modifier.height(4.dp))
-
-        BrushShapeSelector(viewModel = viewModel, color = color)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ActionButtons(
-            onPickColor = viewModel::pickColor,
-            onReset = viewModel::resetCanvas,
-            onBlur = viewModel::blur,
-            onSharpen = viewModel::sharpen,
-            color = color
-        )
+@Composable
+private fun ActionButton(
+    text: String,
+    backgroundColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(containerColor = backgroundColor)
+    ) {
+        Text(text, color = Color.White)
     }
 }
 
@@ -191,43 +277,56 @@ fun RenameableFileName(
 
 @Composable
 private fun DrawingCanvas(bitmap: Bitmap, viewModel: DrawingViewModel) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .aspectRatio(1f),
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
-        AndroidView(
-            factory = { context -> BitmapView(context, null).apply { setBitmap(bitmap) } },
-            update = { view -> view.setBitmap(bitmap) },
+        // Cap max width to 600.dp on large screens (like tablets)
+        val canvasWidth = if (this.maxWidth > 500.dp) 500.dp else maxWidth
+
+        Box(
             modifier = Modifier
-                .fillMaxSize()
+                .width(canvasWidth)
                 .aspectRatio(1f)
-                .background(Color.White)
-                .pointerInput(Unit) {
-                    detectTapGestures { tapOffset ->
-                        viewModel.drawOnCanvas(
-                            tapOffset.x, tapOffset.y,
-                            viewWidth = size.width, viewHeight = size.height
-                        )
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            AndroidView(
+                factory = { context -> BitmapView(context, null).apply { setBitmap(bitmap) } },
+                update = { view -> view.setBitmap(bitmap) },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures { tapOffset ->
+                            viewModel.drawOnCanvas(
+                                tapOffset.x, tapOffset.y,
+                                viewWidth = size.width, viewHeight = size.height
+                            )
+                        }
                     }
-                }
-                .pointerInput(Unit) {
-                    detectDragGestures { change, _ ->
-                        viewModel.drawOnCanvas(
-                            change.position.x, change.position.y,
-                            viewWidth = size.width, viewHeight = size.height
-                        )
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, _ ->
+                            viewModel.drawOnCanvas(
+                                change.position.x, change.position.y,
+                                viewWidth = size.width, viewHeight = size.height
+                            )
+                        }
                     }
-                }
-        )
+            )
+        }
     }
 }
 
+
 @Composable
-private fun SizeSlider(shapeSize: Float, onSizeChange: (Float) -> Unit, color: Color) {
+private fun SizeSlider(
+    shapeSize: Float,
+    onSizeChange: (Float) -> Unit,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
     Row(
-        modifier = Modifier.padding(horizontal = 32.dp),
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text("Size", color = Color.Gray, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
@@ -239,7 +338,7 @@ private fun SizeSlider(shapeSize: Float, onSizeChange: (Float) -> Unit, color: C
             value = shapeSize,
             onValueChange = onSizeChange,
             valueRange = 5f..100f,
-            modifier = Modifier.fillMaxWidth().testTag("BrushSizeSlider"),
+            modifier = Modifier.weight(1f).testTag("BrushSizeSlider"),
             colors = SliderDefaults.colors(
                 thumbColor = color,
                 activeTrackColor = color,
@@ -252,7 +351,8 @@ private fun SizeSlider(shapeSize: Float, onSizeChange: (Float) -> Unit, color: C
 @Composable
 fun BrushShapeSelector(
     viewModel: DrawingViewModel = viewModel(factory = DrawingViewModel.DrawingViewModelProvider.Factory),
-    color: Color
+    color: Color,
+    modifier: Modifier = Modifier
 ) {
     val selected by viewModel.brushShape.collectAsState()
     val icons = listOf(
@@ -262,7 +362,7 @@ fun BrushShapeSelector(
     )
 
     Row(
-        modifier = Modifier.padding(horizontal = 32.dp),
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text("Shape", color = Color.Gray, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
@@ -288,73 +388,16 @@ private fun RowScope.ShapeButton(
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-        modifier = Modifier.weight(1f).testTag("${shape.name}Button")
+        modifier = Modifier
+            .weight(1f)
+            .aspectRatio(1f)
+            .testTag("${shape.name}Button")
     ) {
         Image(
             painter = icon,
             contentDescription = "$shape Button",
+            modifier = Modifier.size(40.dp),
             colorFilter = ColorFilter.tint(if (selected) tintColor else Color(0xFFBDBDBD))
         )
-    }
-}
-
-@Composable
-private fun ActionButtons(
-    onPickColor: () -> Unit,
-    onReset: () -> Unit,
-    onBlur: () -> Unit,
-    onSharpen: () -> Unit,
-    color: Color
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = onPickColor,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = color)
-            ) {
-                Text("Change Color", color = Color.White)
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(
-                onClick = onReset,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-            ) {
-                Text("Reset Canvas", color = Color.White)
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = onBlur,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-            ) {
-                Text("Blur", color = Color.White)
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(
-                onClick = onSharpen,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-            ) {
-                Text("Sharpen", color = Color.White)
-            }
-        }
     }
 }

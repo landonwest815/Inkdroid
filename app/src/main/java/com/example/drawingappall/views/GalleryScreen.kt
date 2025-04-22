@@ -1,34 +1,48 @@
 package com.example.drawingappall.views
 
 import android.net.Uri
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.drawingappall.accounts.TokenStore
 import com.example.drawingappall.databaseSetup.Drawing
-import com.example.drawingappall.viewModels.*
-
+import com.example.drawingappall.viewModels.DrawingFileViewModel
+import com.example.drawingappall.viewModels.DrawingViewModelProvider
+import com.example.drawingappall.viewModels.SocialViewModel
+import com.example.drawingappall.viewModels.SocialViewModelProvider
 import java.io.File
 
 /**
  * Displays the gallery of either local or server-based drawings.
+ * On tablets (screen width ≥ 600 dp) it shows 3 columns; otherwise 2.
  */
 @Composable
 fun GalleryScreen(
@@ -37,45 +51,38 @@ fun GalleryScreen(
     navController: NavController
 ) {
     var localImages by remember { mutableStateOf(true) }
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val columns = if (screenWidthDp >= 600) 3 else 2
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    val drawing = dvm.createFile("Drawing_${System.currentTimeMillis()}")
-                    val encodedFilePath = Uri.encode(drawing.filePath)
-                    navController.navigate("draw/$encodedFilePath/${drawing.fileName}")
-                }
-            ) {
+            FloatingActionButton(onClick = {
+                val drawing = dvm.createFile("Drawing_${System.currentTimeMillis()}")
+                val encodedPath = Uri.encode(drawing.filePath)
+                navController.navigate("draw/$encodedPath/${drawing.fileName}")
+            }) {
                 Icon(Icons.Default.Add, contentDescription = "New Drawing")
             }
         }
-    ) { padding ->
-
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFEEEEEE))
+                .padding(paddingValues)
         ) {
+            // Logout
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp, start = 8.dp),
                 contentAlignment = Alignment.TopStart
             ) {
-                TextButton(
-                    onClick = {
-                        svm.logout()
-                        navController.navigate("splash") {
-                            popUpTo("gallery") { inclusive = true }
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ExitToApp,
-                        contentDescription = null,
-                        tint = Color.Red
-                    )
+                TextButton(onClick = {
+                    svm.logout()
+                    navController.navigate("splash") { popUpTo("gallery") { inclusive = true } }
+                }) {
+                    Icon(Icons.Default.ExitToApp, contentDescription = "Log out", tint = Color.Red)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Log Out", color = Color.Red)
                 }
@@ -83,18 +90,18 @@ fun GalleryScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Tabs
             val tabs = listOf("My Drawings", "Uploaded")
-            val selectedTabIndex = if (localImages) 0 else 1
-
+            val selectedTab = if (localImages) 0 else 1
             TabRow(
-                selectedTabIndex = selectedTabIndex,
+                selectedTabIndex = selectedTab,
                 modifier = Modifier.fillMaxWidth(),
                 containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.primary
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
-                        selected = selectedTabIndex == index,
+                        selected = selectedTab == index,
                         onClick = {
                             localImages = index == 0
                             if (!localImages) svm.fetchFiles()
@@ -102,7 +109,7 @@ fun GalleryScreen(
                         text = {
                             Text(
                                 text = title,
-                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
                             )
                         }
                     )
@@ -111,23 +118,23 @@ fun GalleryScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val list by if (localImages)
+            // Choose which list
+            val files by if (localImages)
                 dvm.drawings.collectAsState(emptyList())
             else
                 dvm.serverDrawings.collectAsState(emptyList())
 
+            // Grid
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
+                columns = GridCells.Fixed(columns),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                for (file in list.asReversed()) {
-                    item {
-                        DrawingFileCard(file, navController, dvm, svm, localImages)
-                    }
+                items(files.asReversed()) { file ->
+                    DrawingFileCard(file, navController, dvm, svm, localImages)
                 }
             }
         }
@@ -154,8 +161,8 @@ fun DrawingFileCard(
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable {
-                        val encodedFilePath = Uri.encode(file.filePath)
-                        navController.navigate("draw/$encodedFilePath/${file.fileName}")
+                        val path = Uri.encode(file.filePath)
+                        navController.navigate("draw/$path/${file.fileName}")
                     }
                     .testTag("DrawingCard_${file.fileName}")
                     .paint(
@@ -164,47 +171,39 @@ fun DrawingFileCard(
                         )
                     )
             ) {
-                val currentUser = TokenStore.username
+                val me = TokenStore.username
 
-                // delete icon stays the same
-                if (localImages || file.ownerUsername == currentUser) {
+                // Delete if it's mine or local
+                if (localImages || file.ownerUsername == me) {
                     IconButton(
                         onClick = { dvm.deleteFile(file) },
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .testTag("Delete_${file.fileName}")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Delete",
-                            tint = Color.Gray
-                        )
+                        Icon(Icons.Default.Close, contentDescription = "Delete", tint = Color.Gray)
                     }
                 }
 
-                // upload icon stays the same
+                // Upload (local) or Download (remote)
                 if (localImages) {
                     IconButton(
                         onClick = { svm.uploadFile(file) },
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .testTag("UploadButton_${file.fileName}")
+                            .testTag("Upload_${file.fileName}")
                     ) {
                         Icon(Icons.Default.Share, contentDescription = "Upload")
                     }
                 } else {
-                    // ← here’s the ONLY change: call downloadFile(uploader, filename)
                     IconButton(
                         onClick = {
-                            svm.downloadFile(
-                                file.ownerUsername ?: return@IconButton,
-                                file.fileName
-                            )
+                            svm.downloadFile(file.ownerUsername ?: return@IconButton, file.fileName)
                             isDownloaded = true
                         },
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .testTag("DownloadButton_${file.fileName}")
+                            .testTag("Download_${file.fileName}")
                     ) {
                         Icon(
                             imageVector = if (isDownloaded) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -225,7 +224,6 @@ fun DrawingFileCard(
                 .testTag("FileName_${file.fileName}")
         )
 
-        // only show “By …” in the cloud gallery
         if (!localImages) {
             file.ownerUsername?.let {
                 Text(
