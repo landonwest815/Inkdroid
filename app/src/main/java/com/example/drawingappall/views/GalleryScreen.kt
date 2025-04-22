@@ -166,12 +166,12 @@ fun DrawingFileCard(
             ) {
                 val currentUser = TokenStore.username
 
+                // delete icon stays the same
                 if (localImages || file.ownerUsername == currentUser) {
                     IconButton(
                         onClick = { dvm.deleteFile(file) },
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(0.dp)
                             .testTag("Delete_${file.fileName}")
                     ) {
                         Icon(
@@ -182,26 +182,28 @@ fun DrawingFileCard(
                     }
                 }
 
-
+                // upload icon stays the same
                 if (localImages) {
                     IconButton(
                         onClick = { svm.uploadFile(file) },
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .padding(0.dp)
                             .testTag("UploadButton_${file.fileName}")
                     ) {
                         Icon(Icons.Default.Share, contentDescription = "Upload")
                     }
                 } else {
+                    // ← here’s the ONLY change: call downloadFile(uploader, filename)
                     IconButton(
                         onClick = {
-                            svm.downloadFile(file.toString())
+                            svm.downloadFile(
+                                file.ownerUsername ?: return@IconButton,
+                                file.fileName
+                            )
                             isDownloaded = true
                         },
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .padding(0.dp)
                             .testTag("DownloadButton_${file.fileName}")
                     ) {
                         Icon(
@@ -223,6 +225,7 @@ fun DrawingFileCard(
                 .testTag("FileName_${file.fileName}")
         )
 
+        // only show “By …” in the cloud gallery
         if (!localImages) {
             file.ownerUsername?.let {
                 Text(

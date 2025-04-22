@@ -120,9 +120,10 @@ class SocialViewModel(
 
         repository.scope.launch {
             try {
-                val byteArrayOutputStream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
-                val byteArray = byteArrayOutputStream.toByteArray()
+                val baos = ByteArrayOutputStream().apply {
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, this)
+                }
+                val byteArray = baos.toByteArray()
                 val username = TokenStore.username ?: "unknown"
 
                 val response: HttpResponse = client.submitFormWithBinaryData(
@@ -145,7 +146,6 @@ class SocialViewModel(
                 } else {
                     Log.e("upload", "❌ Upload failed: ${response.status}")
                 }
-
             } catch (e: Exception) {
                 Log.e("upload", "❌ Error: ${e.message}")
             }
@@ -153,23 +153,19 @@ class SocialViewModel(
     }
 
     /**
-     * Fetches a list of available files from the server and downloads new ones.
+     * Fetches a list of all files on the server and downloads any new ones.
      */
     fun fetchFiles() {
-        val username = TokenStore.username ?: return
-
         repository.scope.launch {
             try {
-                val response: HttpResponse = client.get("http://10.0.2.2:8080/api/download/file_names")
-
+                val response: HttpResponse =
+                    client.get("http://10.0.2.2:8080/api/download/file_names")
                 if (response.status == HttpStatusCode.OK) {
-                    val fileNames: List<String> = response.body()
-                    for (fileName in fileNames) {
-                        val (uploader, actualFileName) = parseFileName(fileName)
-                        if (uploader == username) {
-                            repository.doesNotContainDrawing(actualFileName) {
-                                downloadFile(fileName)
-                            }
+                    val serverList: List<String> = response.body()
+                    serverList.forEach { serverName ->
+                        val (uploader, name) = parseFileName(serverName)
+                        repository.doesNotContainDrawing(name) {
+                            downloadFile(uploader, name)
                         }
                     }
                 } else {
@@ -184,33 +180,27 @@ class SocialViewModel(
     /**
      * Downloads a drawing file from the server and saves it locally.
      */
-    fun downloadFile(fileName: String) {
+    fun downloadFile(uploader: String, fileName: String) {
         repository.scope.launch {
             try {
-                val response = client.get("http://10.0.2.2:8080/api/download/$fileName")
-
+                val url = "http://10.0.2.2:8080/api/download/$uploader/$fileName"
+                val response = client.get(url)
                 if (response.status == HttpStatusCode.OK) {
-                    val byteArray = response.readBytes()
-                    val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
-
+                    val bytes = response.readBytes()
+                    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                     if (bitmap != null) {
-                        val filePath = context.filesDir.absolutePath
-                        val (uploader, actualFileName) = parseFileName(fileName)
-
-                        val outputFile = Drawing(
-                            fileName = actualFileName,
-                            filePath = filePath,
+                        val path = context.filesDir.absolutePath
+                        val drawing = Drawing(
+                            fileName = fileName,
+                            filePath = path,
                             storageLocation = StorageLocation.Server,
                             ownerUsername = uploader
                         )
-
-                        repository.createFile(outputFile)
-                        repository.saveDrawing(outputFile, bitmap)
-                    } else {
-                        Log.e("download", "❌ Failed to decode $fileName")
+                        repository.createFile(drawing)
+                        repository.saveDrawing(drawing, bitmap)
                     }
                 } else {
-                    Log.e("download", "❌ Download failed: ${response.status}")
+                    Log.e("download", "❌ $url → ${response.status}")
                 }
             } catch (e: Exception) {
                 Log.e("download", "❌ Exception: ${e.message}")
@@ -218,14 +208,16 @@ class SocialViewModel(
         }
     }
 
-    /**
-     * Parses the full server file name into uploader and original filename.
-     * Example: "john_drawing.png" → Pair("john", "drawing.png")
-     */
-    private fun parseFileName(serverFileName: String): Pair<String, String> {
-        val parts = serverFileName.split("_", limit = 2)
-        return if (parts.size == 2) parts[0] to parts[1]
-        else "unknown" to serverFileName
+    companion object {
+        /**
+         * Splits "uploader/filename" into its two parts.
+         * E.g. "alice/sketch.png" → Pair("alice", "sketch.png")
+         */
+        private fun parseFileName(serverFileName: String): Pair<String, String> {
+            val parts = serverFileName.split("/", limit = 2)
+            return if (parts.size == 2) parts[0] to parts[1]
+            else "unknown" to serverFileName
+        }
     }
 }
 
@@ -235,8 +227,8 @@ class SocialViewModel(
 object SocialViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
-            val application = this[AndroidViewModelFactory.APPLICATION_KEY] as AllApplication
-            SocialViewModel(application.drawingsRepository, application.applicationContext)
+            val app = this[AndroidViewModelFactory.APPLICATION_KEY] as AllApplication
+            SocialViewModel(app.drawingsRepository, app.applicationContext)
         }
     }
 }

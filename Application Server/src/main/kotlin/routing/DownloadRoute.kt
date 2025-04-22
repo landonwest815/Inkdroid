@@ -13,46 +13,36 @@ import io.ktor.utils.io.*
 import java.io.File
 import java.nio.file.Files.createDirectories
 
-fun Route.downloadRoute(){
-    get("/file_names"){
-        //val username = extractPrincipalUsername(call)!! //TODO
-        val username = "tempUser"
-
-        val userDir = (uploadDir / username).toFile()
-
-        val fileNames = mutableListOf<String>()
-        environment.log.info("$username is downloading file names")
-
-        if (userDir.exists() && userDir.isDirectory) {
-            val files = userDir.listFiles()
-            if (files != null) {
-                for (file in files) {
-                    fileNames.add(file.name)
+fun Route.downloadRoute() {
+    // 1) List _all_ files, prefixed by uploader
+    get("/file_names") {
+        val names = mutableListOf<String>()
+        val base = uploadDir.toFile()
+        if (base.exists() && base.isDirectory) {
+            base.listFiles { it.isDirectory }?.forEach { userDir ->
+                userDir.listFiles { f -> f.isFile }?.forEach { f ->
+                    // we use slash here so client can split on “/”
+                    names.add("${userDir.name}/${f.name}")
                 }
             }
         }
-
-        call.respond(fileNames)
+        call.respond(names)
     }
 
-    get("/{filename}"){
-        //val username = extractPrincipalUsername(call)!! //TODO
-        val username = "tempUser"
+    // 2) Serve any user’s file
+    get("/{uploader}/{filename}") {
+        val uploader = call.parameters["uploader"]!!
         val filename = call.parameters["filename"]!!
-
-        val file = (uploadDir / username / filename).toFile()
-        environment.log.info("$username is downloading file data: $filename")
-
-        if (!file.canRead()) {
-            call.respond(HttpStatusCode.InternalServerError, "File cannot be read")
-            return@get
-        }
+        val file = (uploadDir / uploader / filename).toFile()
 
         if (!file.exists()) {
             call.respond(HttpStatusCode.NotFound, "File not found")
             return@get
         }
-
+        if (!file.canRead()) {
+            call.respond(HttpStatusCode.InternalServerError, "Cannot read file")
+            return@get
+        }
         call.respondFile(file)
     }
 }

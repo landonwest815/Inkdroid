@@ -15,32 +15,23 @@ import java.nio.file.Files.createDirectories
 
 val uploadDir = Path("uploads/")
 
-fun Route.uploadRoute(){
-    post("/{filename}"){
-        val multipartData = call.receiveMultipart(formFieldLimit = 1024 * 1024 * 100)
-        var fileDescription = ""
+fun Route.uploadRoute() {
+    post("/{uploader}/{filename}") {
+        val uploader = call.parameters["uploader"]!!      // ← now captures the first segment
+        val filename = call.parameters["filename"]!!      // ← second segment
 
-        //val username = extractPrincipalUsername(call)!! //TODO
-        val username = "tempUser"
-        val filename = call.parameters["filename"]!!
+        // ensure directory exists
+        createDirectories(uploadDir / uploader)
 
-        //ensure this exists
-        createDirectories(uploadDir/username)
-        val file: java.io.File = (uploadDir / username / filename).toFile()
-
-        environment.log.info("Receiving file from $username")
-
-        multipartData.forEachPart { part ->
+        call.receiveMultipart(formFieldLimit = 1024 * 1024 * 100).forEachPart { part ->
             when (part) {
                 is PartData.FileItem -> {
-                    val file = (uploadDir / username / filename).toFile()
-                    part.provider().copyAndClose(file.writeChannel())
-
+                    val dest = (uploadDir / uploader / filename).toFile()
+                    environment.log.info("Receiving $filename from $uploader")
+                    part.provider().copyAndClose(dest.writeChannel())
                     call.respond(HttpStatusCode.Created)
                 }
-                else -> {
-                    call.respond(HttpStatusCode.BadRequest)
-                }
+                else -> call.respond(HttpStatusCode.BadRequest)
             }
             part.dispose()
         }
