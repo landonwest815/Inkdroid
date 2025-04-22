@@ -69,7 +69,6 @@ fun GalleryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFEEEEEE))
-                .padding(paddingValues)
         ) {
             // Logout
             Box(
