@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.espresso.action.ViewActions.swipeLeft
 import androidx.test.espresso.action.ViewActions.swipeRight
@@ -232,7 +233,116 @@ class UITests {
     }
 
     @Test
-    fun testDeleteDrawingFromGallery() {
+    fun testNavigateToUpload() {
+        login()
+        composeTestRule.onNodeWithTag("tab_Uploaded").performClick()
+
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("owner_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        logout()
+    }
+
+    @Test
+    fun testUpload() {
+        login()
+        composeTestRule.onNodeWithContentDescription("New Drawing").performClick()
+        composeTestRule.onNodeWithContentDescription("Save & Close").performClick()
+
+        // Wait until a drawing appears
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Extract first drawing's filename from tag
+        val tag = composeTestRule
+            .onAllNodes(hasTestTagStartingWith("DrawingCard_"))[0]
+            .fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsProperties.TestTag]
+
+        val fileName = tag.removePrefix("DrawingCard_")
+
+        composeTestRule.onNodeWithTag("Upload_${fileName}").assertExists().performClick()
+
+        composeTestRule.onNodeWithTag("owner_test").assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag("DeleteServer_${fileName}").performClick()
+        logout()
+    }
+
+    @Test
+    fun testDownload() {
+        login()
+        composeTestRule.onNodeWithContentDescription("New Drawing").performClick()
+        composeTestRule.onNodeWithContentDescription("Save & Close").performClick()
+
+        // Wait until a drawing appears
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Extract first drawing's filename from tag
+        val tag = composeTestRule
+            .onAllNodes(hasTestTagStartingWith("DrawingCard_"))[0]
+            .fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsProperties.TestTag]
+
+        val fileName = tag.removePrefix("DrawingCard_")
+
+        composeTestRule.onNodeWithTag("Upload_${fileName}").assertExists().performClick()
+
+        logout()
+
+        login("test2")
+
+        composeTestRule.onNodeWithTag("tab_Uploaded").performClick()
+
+        // Wait until a drawing appears
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeTestRule.onNodeWithTag("Download_${fileName}").performClick()
+
+        // Wait until a drawing appears
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_${fileName}"))[0]
+            .assertExists().performClick()
+
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodesWithContentDescription("Circle Button").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeTestRule.onNodeWithContentDescription("Save & Close").performClick()
+
+        logout()
+
+        login()
+
+        composeTestRule.onNodeWithTag("tab_Uploaded").performClick()
+
+        // Wait until a drawing appears
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeTestRule.onNodeWithTag("DeleteServer_${fileName}").performClick()
+
+        logout()
+    }
+
+    @Test
+    fun testDeleteDrawingFromGalleryLocal() {
         login()
 
         composeTestRule.onNodeWithContentDescription("New Drawing").performClick()
@@ -258,6 +368,98 @@ class UITests {
         logout()
     }
 
+    @Test
+    fun testDeleteDrawingFromLocalGalleryPersistanceOnUploaded() {
+        login()
+
+        composeTestRule.onNodeWithContentDescription("New Drawing").performClick()
+        composeTestRule.onNodeWithContentDescription("Save & Close").performClick()
+
+        // Wait until a drawing appears
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Extract first drawing's filename from tag
+        val tag = composeTestRule
+            .onAllNodes(hasTestTagStartingWith("DrawingCard_"))[0]
+            .fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsProperties.TestTag]
+
+        val fileName = tag.removePrefix("DrawingCard_")
+
+        composeTestRule.onNodeWithTag("Upload_${fileName}").assertExists().performClick()
+
+        composeTestRule.onNodeWithTag("tab_My Drawings").performClick()
+
+        // Wait until a drawings appear
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Tap delete button using Delete_$fileName tag
+        composeTestRule.onNodeWithTag("DeleteLocal_$fileName").assertExists().performClick()
+
+        composeTestRule.onNodeWithTag("tab_Uploaded").performClick()
+
+        // Wait until a drawings appear
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeTestRule.onNodeWithTag("DrawingCard_$fileName").assertIsNotDisplayed()
+
+        logout()
+    }
+
+    @Test
+    fun testDeleteDrawingFromUploadedGalleryPersistanceOnLocal(){
+        login()
+
+        composeTestRule.onNodeWithContentDescription("New Drawing").performClick()
+        composeTestRule.onNodeWithContentDescription("Save & Close").performClick()
+
+        // Wait until a drawing appears
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Extract first drawing's filename from tag
+        val tag = composeTestRule
+            .onAllNodes(hasTestTagStartingWith("DrawingCard_"))[0]
+            .fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsProperties.TestTag]
+
+        val fileName = tag.removePrefix("DrawingCard_")
+
+        composeTestRule.onNodeWithTag("Upload_${fileName}").assertExists().performClick()
+
+        // Wait until a drawings appear
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_${fileName}"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Tap delete button using Delete_$fileName tag
+        composeTestRule.onNodeWithTag("DeleteServer_${fileName}").performClick()
+
+        composeTestRule.onNodeWithTag("tab_My Drawings").performClick()
+
+        // Wait until a drawings appear
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeTestRule.onNodeWithTag("DrawingCard_$fileName").assertIsNotDisplayed()
+
+        logout()
+    }
+
     fun hasTestTagStartingWith(prefix: String): SemanticsMatcher {
         return SemanticsMatcher("TestTag starts with '$prefix'") { node ->
             val tag = node.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag)
@@ -265,9 +467,9 @@ class UITests {
         }
     }
 
-    fun login(){
-        composeTestRule.onNodeWithTag("username_field").performTextInput("test")
-        composeTestRule.onNodeWithTag("password_field").performTextInput("test")
+    fun login(usernameAndPassword: String = "test"){
+        composeTestRule.onNodeWithTag("username_field").performTextInput(usernameAndPassword)
+        composeTestRule.onNodeWithTag("password_field").performTextInput(usernameAndPassword)
         composeTestRule.onNodeWithTag("submit").performClick()
 
         //wait for gallery to load

@@ -107,6 +107,7 @@ fun GalleryScreen(
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
+                        modifier = Modifier.testTag("tab_${title}"),
                         selected = selectedTab == index,
                         onClick = {
                             localImages = (index == 0)
@@ -304,7 +305,7 @@ fun DrawingFileCard(
                     text = "By $it",
                     color = Color.DarkGray,
                     fontSize = 12.sp,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier.align(Alignment.CenterHorizontally).testTag("owner_${file.ownerUsername}")
                 )
             }
         }
