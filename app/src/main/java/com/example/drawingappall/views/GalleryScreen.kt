@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.drawingappall.R
 import com.example.drawingappall.accounts.TokenStore
 import com.example.drawingappall.databaseSetup.Drawing
 import com.example.drawingappall.databaseSetup.StorageLocation
@@ -168,6 +170,9 @@ fun GalleryScreen(
                         onUploaded = {
                             localImages = false
                             svm.fetchFiles()
+                        },
+                        onDownloaded = {
+                            localImages = true
                         }
                     )
                 }
@@ -189,6 +194,7 @@ fun DrawingFileCard(
     svm: SocialViewModel,
     localImages: Boolean,
     onUploaded: () -> Unit,
+    onDownloaded: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currentUser = TokenStore.username
@@ -231,7 +237,27 @@ fun DrawingFileCard(
                     ) {
                         Icon(Icons.Default.Close, contentDescription = "Delete", tint = Color.Gray)
                     }
+                } else {
+                IconButton(
+                    onClick = {
+                        // remember if this drawing was also on the server
+                        val wasSharedOnServer = file.storageLocation == StorageLocation.Both
+
+                        // 1) remove local copy (and flip to Server if it was shared)
+                        dvm.deleteFile(file)
+
+                        // 2) if it used to live on the server, also delete remotely
+                        if (wasSharedOnServer && file.ownerUsername == TokenStore.username) {
+                            svm.deleteRemote(file)
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .testTag("DeleteServer_${file.fileName}")
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Delete", tint = Color.Gray)
                 }
+            }
 
                 // Upload action for local drawings
                 if (localImages) {
@@ -246,7 +272,19 @@ fun DrawingFileCard(
                     ) {
                         Icon(Icons.Default.Share, contentDescription = "Upload")
                     }
+                } else {
+                IconButton(
+                    onClick = {
+                        svm.copyFile(file.filePath, file.fileName)
+                        onDownloaded()
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .testTag("Download_${file.fileName}")
+                ) {
+                    Icon(painter = painterResource(R.drawable.download), contentDescription = "Download")
                 }
+            }
             }
         }
 

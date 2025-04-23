@@ -228,6 +228,27 @@ class SocialViewModel(
         } catch (e: Exception) { /* ... */ }
     }
 
+    /**
+     * Copies one uploaded PNG and saves it via Room + disk.
+     */
+    fun copyFile(filePath: String, fileName: String) = viewModelScope.launch {
+            val bitmap = repository.loadFromDisk(filePath, fileName) ?: return@launch
+
+            // Save copied drawing
+            val copyName = fileName + "_${System.currentTimeMillis()}"
+            val path = context.filesDir.absolutePath
+            val currentUser = TokenStore.username ?: return@launch
+            val storage = StorageLocation.Local
+
+            val copied = Drawing(
+                fileName        = copyName,
+                filePath        = path,
+                storageLocation = storage,
+                ownerUsername   = currentUser
+            )
+            repository.create(copied)
+            repository.saveToDisk(path, copyName, bitmap)
+    }
 
     // === Delete remote ===
 

@@ -36,13 +36,16 @@ fun Route.downloadRoute() {
         val file = (uploadDir / uploader / filename).toFile()
 
         if (!file.exists()) {
+            environment.log.info("Download of $filename from $uploader Failed")
             call.respond(HttpStatusCode.NotFound, "File not found")
             return@get
         }
         if (!file.canRead()) {
+            environment.log.info("Download of $filename from $uploader Failed")
             call.respond(HttpStatusCode.InternalServerError, "Cannot read file")
             return@get
         }
+        environment.log.info("Download of $filename Succeeded")
         call.respondFile(file)
     }
 
