@@ -176,7 +176,7 @@ class SocialViewModel(
                 // Purge local records of drawings removed on server
                 val allDrawings = repository.getAllDrawings() // suspend fun in repository returning List<Drawing>
                 allDrawings
-                    .filter { it.storageLocation != StorageLocation.Local }
+                    .filter { it.storageLocation == StorageLocation.Server}
                     .forEach { dr ->
                         val entry = "${dr.ownerUsername}/${dr.fileName}"
                         if (entry !in serverList) {
