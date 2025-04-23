@@ -69,7 +69,7 @@ fun GalleryScreen(
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                Box(Modifier.weight(1f).testTag("logout"), contentAlignment = Alignment.CenterStart) {
                     TextButton(onClick = {
                         svm.logout()
                         navController.navigate("splash") {

@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -95,6 +96,7 @@ fun SplashScreen(
                 label = { Text("Username") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(0.8f)
+                            .testTag("username_field")
             )
 
             // Password field
@@ -106,6 +108,7 @@ fun SplashScreen(
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(0.8f)
+                                .testTag("password_field")
             )
 
             // Submit button
@@ -117,6 +120,7 @@ fun SplashScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(0.8f)
+                    .testTag("submit")
             ) {
                 Text(if (isLoginMode) "Log In" else "Register")
                 Icon(
@@ -127,7 +131,9 @@ fun SplashScreen(
             }
 
             // Toggle between modes
-            TextButton(onClick = { isLoginMode = !isLoginMode }) {
+            TextButton(onClick = { isLoginMode = !isLoginMode },
+                        modifier = Modifier.testTag("login_mode_toggle"))
+            {
                 Text(
                     text = if (isLoginMode)
                         "Need an account? Register"
@@ -138,7 +144,7 @@ fun SplashScreen(
 
             // Error message
             authError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("error_text"))
             }
         }
     }
