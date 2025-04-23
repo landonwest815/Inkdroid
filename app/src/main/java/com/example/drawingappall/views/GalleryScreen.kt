@@ -237,7 +237,7 @@ fun DrawingFileCard(
                     ) {
                         Icon(Icons.Default.Close, contentDescription = "Delete", tint = Color.Gray)
                     }
-                } else {
+                } else if (file.ownerUsername == currentUser){
                 IconButton(
                     onClick = {
                         // remember if this drawing was also on the server
