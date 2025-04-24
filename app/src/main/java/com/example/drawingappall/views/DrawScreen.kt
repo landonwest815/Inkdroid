@@ -109,15 +109,13 @@ private fun DrawScreenHeader(
     onRename: (String, (Boolean) -> Unit) -> Unit,
     onSaveAndClose: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 25.dp),
-        contentAlignment = Alignment.Center
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         IconButton(
             onClick = onSaveAndClose,
-            modifier = Modifier.align(Alignment.CenterStart)
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -155,6 +153,7 @@ fun RenameableFileName(
                 showError = false
             }
             .testTag("FileNameDisplay")
+            .widthIn(max = 300.dp)
     )
 
     if (showDialog) {

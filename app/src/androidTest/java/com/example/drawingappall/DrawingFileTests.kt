@@ -34,7 +34,7 @@ class DrawingFileTests {
         // Confirm it's no longer in the drawings list (give it a moment to update)
         runBlocking {
             delay(1000)
-            val stillExists = vm.drawings.value.any { it.fileName == file.fileName }
+            val stillExists = vm.localDrawings.value.any { it.fileName == file.fileName }
             assertFalse(stillExists)
         }
     }
@@ -54,7 +54,7 @@ class DrawingFileTests {
         // Confirm it's no longer in the drawings list (give it a moment to update)
         runBlocking {
             delay(1000)
-            val stillExists = vm.drawings.value.any { it.fileName == drawing.fileName }
+            val stillExists = vm.localDrawings.value.any { it.fileName == drawing.fileName }
             assertFalse(stillExists)
         }
 
@@ -73,7 +73,7 @@ class DrawingFileTests {
         val file = vm.createFile(oldName)
 
         var result = false
-        vm.renameDrawing(file.filePath, oldName, newName) {
+        vm.renameFile(file.filePath, oldName, newName) {
             result = it
         }
 
@@ -86,7 +86,7 @@ class DrawingFileTests {
         val vm = testDrawingFileVM()
 
         var result = true
-        vm.renameDrawing("/fake/path", "doesnt_exist", "new_name") {
+        vm.renameFile("/fake/path", "doesnt_exist", "new_name") {
             result = it
         }
 
@@ -113,7 +113,7 @@ class DrawingFileTests {
         val file = vm.createFile("original")
 
         var result = true
-        vm.renameDrawing(file.filePath, "original", "existing_name") {
+        vm.renameFile(file.filePath, "original", "existing_name") {
             result = it
         }
 

@@ -46,7 +46,7 @@ fun App() {
                     )
                 }
 
-                // NEW: create‑then‑navigate route
+                //create‑then‑navigate route
                 composable("draw/new") {
                     // grab your ViewModel
                     val dvm: DrawingFileViewModel =
