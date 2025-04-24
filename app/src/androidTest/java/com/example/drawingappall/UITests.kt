@@ -267,6 +267,12 @@ class UITests {
 
         composeTestRule.onNodeWithTag("Upload_${fileName}").assertExists().performClick()
 
+        // Wait until a drawing appears
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodes(hasTestTagStartingWith("DrawingCard_"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
         composeTestRule.onNodeWithTag("owner_test").assertIsDisplayed()
 
         composeTestRule.onNodeWithTag("DeleteServer_${fileName}").performClick()
