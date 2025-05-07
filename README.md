@@ -1,30 +1,41 @@
-# Inkdroid 🎨🖌️
+# 🎨🖌️ Inkdroid – Interactive Android Drawing & Sharing App
 
-An interactive Android drawing app built with Jetpack Compose.
+## 📱 Overview
 
-## Features
+Inkdroid is an interactive Android drawing app built with Jetpack Compose. It lets users create custom drawings with flexible brush settings, save them locally, and share them to a cloud database for others to view and download — blending creativity with a social twist.
+
+Designed with smooth navigation and persistent authentication, Inkdroid delivers a fun, community-driven mobile drawing experience.
+
+## 🎯 Features
 
 - 🖍️ Draw with customizable brushes (color, shape, size)
 - 📁 Save and manage local drawings
 - ☁️ Upload and download shared images
-- 🧭 Smooth navigation between splash, gallery, and drawing screens
 - 👤 User authentication with persistent login
+- 🧭 Smooth navigation between splash, gallery, and drawing screens
 
-## Screenshots
+## 🛠️ Tech Stack
 
-*Add screenshots here later*
+- **Language:** Kotlin
+- **Frameworks:** Jetpack Compose, Ktor (client + server)
+- **Architecture:** MVVM (Model-View-ViewModel)
+- **Persistence:** Room DB, local file storage
+- **Backend:** Ktor server for shared uploads
+- **IDE:** Android Studio
 
-## Getting Started
+## 🚀 Getting Started
 
-1. Clone the repo:  
-   `git clone https://github.com/landonwest815/Inkdroid.git`
-2. Open the project in Android Studio
-3. Build and run on an emulator or physical device
+1. **Clone the repository:**
 
-## Tech Stack
+    ```bash
+    git clone https://github.com/landonwest815/Inkdroid.git
+    ```
 
-- Kotlin
-- Jetpack Compose
-- MVVM architecture
-- Ktor (client + server)
-- Room / Local file storage
+2. **Open in Android Studio:**
+    - Import the project and let Gradle sync.
+
+3. **Build and Run:**
+    - Launch on an emulator or physical Android device.
+
+4. **Start Drawing:**
+    - Create local artwork or explore and import shared community drawings!
